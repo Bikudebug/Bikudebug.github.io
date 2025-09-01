@@ -2,161 +2,137 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bikash Kumar | Portfolio</title>
-  <meta name="description" content="Personal Portfolio of Bikash Kumar - Computer Vision Researcher">
-  <meta name="author" content="Bikash Kumar">
-
-  <!-- Bootstrap -->
-  <link rel="stylesheet" href="css/bootstrap.min.css" />
-  <!-- Icons -->
-  <link rel="stylesheet" href="css/materialdesignicons.min.css">
-  <link rel="stylesheet" href="css/mobiriseicons.css">
-  <!-- Animations & Plugins -->
-  <link rel="stylesheet" href="css/animate.min.css">
-  <link rel="stylesheet" href="css/owl.carousel.css" />
-  <link rel="stylesheet" href="css/owl.theme.css" />
-  <link rel="stylesheet" href="css/magnific-popup.css">
-  <!-- Custom -->
-  <link rel="stylesheet" href="css/style.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+    .navbar { background: #0d1b2a; }
+    .navbar a { color: #fff !important; }
+    .hero {
+      background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.7)),
+                  url('images/header_img.jpg') center/cover no-repeat;
+      color: #fff; height: 100vh; display: flex; align-items: center; text-align: center;
+    }
+    .hero h1 { font-size: 3rem; font-weight: 700; }
+    .hero p { font-size: 1.2rem; }
+    section { padding: 80px 0; }
+    h2 { font-weight: 700; margin-bottom: 30px; color: #0077b6; }
+    .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: transform .3s; }
+    .card:hover { transform: translateY(-6px); }
+    footer { background: #0d1b2a; color: #fff; padding: 20px; text-align: center; }
+  </style>
 </head>
 <body>
 
 <!-- NAVBAR -->
-<nav class="navbar navbar-expand-lg fixed-top custom-nav sticky">
+<nav class="navbar navbar-expand-lg fixed-top">
   <div class="container">
-    <a class="navbar-brand logo" href="#home">
-      <h3 class="text-primary mb-0">Bikash</h3>
-    </a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse">
-      <i class="mdi mdi-menu"></i>
+    <a class="navbar-brand fw-bold text-white" href="#">Bikash</a>
+    <button class="navbar-toggler bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarCollapse">
-      <ul class="navbar-nav ml-auto">
-        <li class="nav-item"><a href="#about" class="nav-link">About</a></li>
-        <li class="nav-item"><a href="#interests" class="nav-link">Research</a></li>
-        <li class="nav-item"><a href="#education" class="nav-link">Education</a></li>
-        <li class="nav-item"><a href="#projects" class="nav-link">Projects</a></li>
-        <li class="nav-item"><a href="#hobbies" class="nav-link">Hobbies</a></li>
-        <li class="nav-item"><a href="#contact" class="nav-link">Contact</a></li>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+        <li class="nav-item"><a class="nav-link" href="#interests">Research</a></li>
+        <li class="nav-item"><a class="nav-link" href="#education">Education</a></li>
+        <li class="nav-item"><a class="nav-link" href="#projects">Projects</a></li>
+        <li class="nav-item"><a class="nav-link" href="#hobbies">Hobbies</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
       </ul>
     </div>
   </div>
 </nav>
-<!-- END NAVBAR -->
 
 <!-- HERO -->
-<section class="section h-100vh jarallax" style="background: url('images/header_img.jpg') center/cover;" id="home">
-  <div class="bg-overlay"></div>
-  <div class="home-table">
-    <div class="home-table-center text-center text-white">
-      <h4>Hello & Welcome</h4>
-      <h1 class="header_title mb-0 mt-3">I’m <span class="font-weight-bold">Bikash Kumar</span></h1>
-      <p class="mt-3">Researcher in Computer Vision · Sports Analytics · Pose Estimation</p>
-    </div>
+<header class="hero" id="home">
+  <div class="container">
+    <h1>Hi, I’m Bikash Kumar</h1>
+    <p class="mt-3">Computer Vision · Sports Analytics · Pose Estimation</p>
+    <a href="#about" class="btn btn-primary btn-lg mt-4">Explore My Work</a>
   </div>
-</section>
-<!-- END HERO -->
+</header>
 
 <!-- ABOUT -->
-<section class="section" id="about">
+<section id="about">
   <div class="container text-center">
-    <h2 class="font-weight-bold">About Me</h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
-    <p class="text-muted mt-3">
-      I’m a recent Project Assistant-I at IIT Gandhinagar. My work focuses on understanding human motion using pose data, unsupervised learning techniques, and spatio-temporal modeling.  
-      I hold a Master’s degree in Physics from IITGN, where I transitioned into computer vision research.  
-      My passion lies in developing models that learn from minimal supervision and explain complex visual dynamics in sports and human-centric videos.  
-      Currently exploring multimodal learning and vision-language models for biomechanical phase analysis.  
-      <br><strong>♨️ Actively looking for PhD positions!</strong>
+    <h2>About Me</h2>
+    <p class="lead">
+      Project Assistant-I at IIT Gandhinagar. My work focuses on human motion understanding using pose data, unsupervised learning, and spatio-temporal modeling.  
+      I hold a Master’s in Physics (IITGN) and transitioned into computer vision research. Currently exploring multimodal learning and vision-language models for sports analytics.  
     </p>
+    <p class="fw-bold text-danger">♨️ Actively seeking PhD positions in Computer Vision.</p>
   </div>
 </section>
-<!-- END ABOUT -->
 
-<!-- RESEARCH INTERESTS -->
-<section class="section bg-light" id="interests">
+<!-- INTERESTS -->
+<section id="interests" class="bg-light">
   <div class="container text-center">
-    <h2>Research <span class="font-weight-bold">Interests</span></h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
-    <div class="row mt-4">
-      <div class="col-md-4"><div class="p-3"><h5>Action Segmentation</h5><p>Temporal analysis of sports and human activities.</p></div></div>
-      <div class="col-md-4"><div class="p-3"><h5>Pose Estimation</h5><p>Improving 2D/3D skeleton data for recognition tasks.</p></div></div>
-      <div class="col-md-4"><div class="p-3"><h5>Sports Analytics</h5><p>Biomechanical phase recognition in throwing sports.</p></div></div>
-      <div class="col-md-4"><div class="p-3"><h5>Unsupervised Learning</h5><p>Learning patterns with minimal supervision.</p></div></div>
-      <div class="col-md-4"><div class="p-3"><h5>Multimodal AI</h5><p>Vision-language reasoning for action captioning.</p></div></div>
+    <h2>Research Interests</h2>
+    <div class="row g-4">
+      <div class="col-md-4"><div class="card p-3"><h5>Action Segmentation</h5><p>Temporal analysis of sports and human activities.</p></div></div>
+      <div class="col-md-4"><div class="card p-3"><h5>Pose Estimation</h5><p>Improving 2D/3D skeleton data.</p></div></div>
+      <div class="col-md-4"><div class="card p-3"><h5>Sports Analytics</h5><p>Biomechanical phase recognition in throwing sports.</p></div></div>
+      <div class="col-md-4"><div class="card p-3"><h5>Unsupervised Learning</h5><p>Learning patterns with minimal supervision.</p></div></div>
+      <div class="col-md-4"><div class="card p-3"><h5>Multimodal AI</h5><p>Vision-language reasoning for action captioning.</p></div></div>
     </div>
   </div>
 </section>
-<!-- END RESEARCH -->
 
 <!-- EDUCATION -->
-<section class="section" id="education">
+<section id="education">
   <div class="container text-center">
     <h2>Education</h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
-    <div class="row mt-4">
-      <div class="col-md-6"><div class="card p-3"><h5>IIT Gandhinagar</h5><p>M.Sc. in Physics (2023 – 2025)</p></div></div>
-      <div class="col-md-6"><div class="card p-3"><h5>Berhampur University</h5><p>B.Sc. in Physics (2019 – 2022)</p></div></div>
+    <div class="row g-4">
+      <div class="col-md-6"><div class="card p-4"><h5>IIT Gandhinagar</h5><p>M.Sc. in Physics (2023 – 2025)</p></div></div>
+      <div class="col-md-6"><div class="card p-4"><h5>Berhampur University</h5><p>B.Sc. in Physics (2019 – 2022)</p></div></div>
     </div>
   </div>
 </section>
-<!-- END EDUCATION -->
 
 <!-- PROJECTS -->
-<section class="section bg-light" id="projects">
+<section id="projects" class="bg-light">
   <div class="container text-center">
     <h2>Projects & Publications</h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
-    <div class="row mt-4">
-      <div class="col-md-4"><div class="card p-3 h-100">
-        <h5>UTAL-GNN</h5>
-        <p>Unsupervised Temporal Action Localization using GNN (Accepted at ICIP 2025)</p>
+    <div class="row g-4">
+      <div class="col-md-4"><div class="card p-4 h-100">
+        <h5>UTAL-GNN</h5><p>Unsupervised Temporal Action Localization using GNN (Accepted at ICIP 2025)</p>
       </div></div>
-      <div class="col-md-4"><div class="card p-3 h-100">
-        <h5>Real-Time Combat Training Analytics</h5>
-        <p>Skeleton-based punch detection system (Accepted at ICSE 2025)</p>
+      <div class="col-md-4"><div class="card p-4 h-100">
+        <h5>Real-Time Combat Training Analytics</h5><p>Skeleton-based punch detection system (Accepted at ICSE 2025)</p>
       </div></div>
-      <div class="col-md-4"><div class="card p-3 h-100">
-        <h5>Unsupervised Segmentation in Throwing Sports</h5>
-        <p>Pose-based javelin throw phase recognition (Under Review at ICMV 2025)</p>
+      <div class="col-md-4"><div class="card p-4 h-100">
+        <h5>Throwing Sports Segmentation</h5><p>Pose-based javelin throw phase recognition (Under Review at ICMV 2025)</p>
       </div></div>
     </div>
   </div>
 </section>
-<!-- END PROJECTS -->
 
 <!-- HOBBIES -->
-<section class="section" id="hobbies">
+<section id="hobbies">
   <div class="container text-center">
     <h2>Hobbies</h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
-    <p class="mt-3">Reading research articles · Watching anime/movies · Playing football & cricket · Photography · Traveling</p>
+    <p class="lead">Reading research articles · Watching anime/movies · Playing football & cricket · Photography · Traveling</p>
   </div>
 </section>
-<!-- END HOBBIES -->
 
 <!-- CONTACT -->
-<section class="section bg-light" id="contact">
+<section id="contact" class="bg-light">
   <div class="container text-center">
     <h2>Contact</h2>
-    <div class="main-title-border"><i class="mdi mdi-asterisk"></i></div>
     <p>Email: <a href="mailto:bikash@example.com">bikash@example.com</a></p>
     <p>GitHub: <a href="https://github.com/yourusername" target="_blank">github.com/yourusername</a></p>
     <p>LinkedIn: <a href="https://linkedin.com/in/yourprofile" target="_blank">linkedin.com/in/yourprofile</a></p>
   </div>
 </section>
-<!-- END CONTACT -->
 
 <!-- FOOTER -->
-<footer class="bg-dark text-white text-center p-3">
-  <p class="mb-0">© 2025 Bikash Kumar. All Rights Reserved.</p>
+<footer>
+  <p class="mb-0">© 2025 Bikash Kumar | Portfolio Website</p>
 </footer>
 
-<!-- JS -->
-<script src="js/jquery.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-<script src="js/owl.carousel.min.js"></script>
-<script src="js/custom.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
