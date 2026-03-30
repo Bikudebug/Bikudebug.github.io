@@ -7,7 +7,13 @@ redirect_from:
   - /about.html
 ---
 
-I am an M.Sc. Physics student at the Indian Institute of Technology, Gandhinagar. My research bridges the gap between physics and computational technologies, with a strong focus on Generative AI, Unsupervised Temporal Video Segmentation, and Motion Understanding. I am passionate about utilizing deep learning frameworks to solve complex problems in sports analytics and action recognition.
+I hold a Master’s degree in Physics from IIT Gandhinagar, where I transitioned into the field of computer vision through hands-on research and project experience.
+
+Over the past year, I’ve worked on various problems involving pose-based action recognition, unsupervised motion segmentation, and graph neural networks for human activity understanding. My passion lies in developing models that learn from minimal supervision and make sense of complex visual dynamics, especially in sports and human-centric videos.
+
+Currently, my research is expanding into multimodal learning, with a focus on exploring vision-language models for action captioning and developing specialized large-scale datasets centered on biomechanical phases in throwing sports. 
+
+♨️I am actively looking for PhD positions where I can contribute and grow as a researcher in computer vision.
 
 ## Education
 
@@ -27,3 +33,13 @@ I am an M.Sc. Physics student at the Indian Institute of Technology, Gandhinagar
 * Generative AI / VLM
 * Sports Analytics
 * Activity Recognition
+
+## Hobbies
+
+Watching anime/movies.
+
+Playing football and cricket.
+
+Photographic.
+
+Travelling.

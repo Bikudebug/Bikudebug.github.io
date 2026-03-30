@@ -41,3 +41,11 @@
     "vendor/font-awesome/solid",
     "vendor/font-awesome/brands"
 ;
+
+body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.9)), url('../images/anime_bg.png');
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
