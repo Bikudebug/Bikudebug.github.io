@@ -59,10 +59,15 @@ body {
     to { background-position: -400px 400px; }
 }
 
-/* Fix profile picture: slightly rounded standard shape */
+/* Fix profile picture: crop perfectly to the face and increase size */
 .author__avatar img {
     border-radius: 8px !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    width: 200px !important;
+    max-width: 100% !important;
+    height: 200px !important;
+    object-fit: cover !important;
+    object-position: center 15% !important; /* Crops to the face assuming it's near the top-center */
 }
 
 /* For Dark Mode Backgrounds */
