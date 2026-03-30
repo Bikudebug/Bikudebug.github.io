@@ -43,9 +43,49 @@
 ;
 
 body {
-    background-image: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.9)), url('../images/anime_bg.png');
-    background-size: cover;
-    background-position: center top;
+    /* Dragon Ball Z style moving energy/sky background */
+    background: linear-gradient(135deg, rgba(255, 230, 153, 0.4) 25%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 204, 102, 0.4) 75%);
+    background-size: 400% 400%;
+    animation: dbzAura 8s ease infinite;
     background-attachment: fixed;
-    background-repeat: no-repeat;
+}
+
+@keyframes dbzAura {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Fix profile picture: remove circle, make standard */
+.author__avatar img {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+}
+
+/* Fix Night Mode text color to yellow */
+@media (prefers-color-scheme: dark) {
+    body, h1, h2, h3, h4, p, li, span, div, a { color: #ffcc00 !important; }
+    body {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 25%, rgba(10, 10, 10, 0.9) 50%, rgba(50, 40, 0, 0.8) 75%) !important;
+        background-size: 400% 400% !important;
+        animation: dbzAura 8s ease infinite !important;
+        background-attachment: fixed !important;
+    }
+}
+
+html[data-theme="dark"] body, 
+html[theme="dark"] body, 
+.dark-mode body, 
+body.dark {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 25%, rgba(10, 10, 10, 0.9) 50%, rgba(50, 40, 0, 0.8) 75%) !important;
+    background-size: 400% 400% !important;
+    animation: dbzAura 8s ease infinite !important;
+    background-attachment: fixed !important;
+}
+
+html[data-theme="dark"] body *, 
+html[theme="dark"] body *, 
+.dark-mode body *, 
+body.dark * {
+    color: #ffcc00 !important;
 }
