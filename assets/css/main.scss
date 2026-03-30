@@ -42,50 +42,36 @@
     "vendor/font-awesome/brands"
 ;
 
+/* DBZ "Live Movement" Aura and Speed Lines Background */
 body {
-    /* Dragon Ball Z style moving energy/sky background */
-    background: linear-gradient(135deg, rgba(255, 230, 153, 0.4) 25%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 204, 102, 0.4) 75%);
-    background-size: 400% 400%;
-    animation: dbzAura 8s ease infinite;
+    background-color: #fca311; /* Golden/Orange aura base */
+    background-image: 
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.7) 40px, rgba(255,255,255,0.7) 45px),
+        linear-gradient(135deg, rgba(255,100,0,0.5) 0%, rgba(255,200,0,0.6) 100%);
+    background-size: 200vw 200vh;
+    animation: dbzAuraSpeed 1.5s linear infinite;
     background-attachment: fixed;
+    color: #333; /* Ensuring original text colors stick over the bright background */
 }
 
-@keyframes dbzAura {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+@keyframes dbzAuraSpeed {
+    from { background-position: 0 0; }
+    to { background-position: -400px 400px; }
 }
 
-/* Fix profile picture: remove circle, make standard */
+/* Fix profile picture: slightly rounded standard shape */
 .author__avatar img {
     border-radius: 8px !important;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
 }
 
-/* Fix Night Mode text color to yellow */
+/* For Dark Mode Backgrounds */
 @media (prefers-color-scheme: dark) {
-    body, h1, h2, h3, h4, p, li, span, div, a { color: #ffcc00 !important; }
     body {
-        background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 25%, rgba(10, 10, 10, 0.9) 50%, rgba(50, 40, 0, 0.8) 75%) !important;
-        background-size: 400% 400% !important;
-        animation: dbzAura 8s ease infinite !important;
-        background-attachment: fixed !important;
+        background-color: #2b1d03; /* Dark Gold/Orange base */
+        background-image: 
+            repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,0,0.1) 40px, rgba(255,255,0,0.1) 45px),
+            linear-gradient(135deg, rgba(100,40,0,0.8) 0%, rgba(150,100,0,0.8) 100%);
+        animation: dbzAuraSpeed 1.5s linear infinite;
     }
-}
-
-html[data-theme="dark"] body, 
-html[theme="dark"] body, 
-.dark-mode body, 
-body.dark {
-    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 25%, rgba(10, 10, 10, 0.9) 50%, rgba(50, 40, 0, 0.8) 75%) !important;
-    background-size: 400% 400% !important;
-    animation: dbzAura 8s ease infinite !important;
-    background-attachment: fixed !important;
-}
-
-html[data-theme="dark"] body *, 
-html[theme="dark"] body *, 
-.dark-mode body *, 
-body.dark * {
-    color: #ffcc00 !important;
 }

@@ -38,7 +38,7 @@ author:
   googlescholar    : "https://scholar.google.com/citations?user=GeQUjikAAAAJ"
   inspire-hep      : # URL
   impactstory      : # URL
-  orcid            : "https://orcid.org/yourorcidurl"
+  orcid            : # URL
   semantic         : # URL
   ssrn             : # URL
   pubmed           : # URL
@@ -66,7 +66,7 @@ author:
   keybase          : # Username
   instagram        : # Username
   lastfm           : # Username
-  linkedin         : "https://www.linkedin.com/in/bikash-kumar-050932202/"
+  linkedin         : "bikash-kumar-050932202"
   mastodon         : # URL
   medium           : # URL
   pinterest        : # Username
