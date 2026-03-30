@@ -42,19 +42,19 @@
     "vendor/font-awesome/brands"
 ;
 
-/* DBZ "Live Movement" Aura and Speed Lines Background */
+/* DBZ Manga "Live Movement" Aura Background (Black and White) */
 body {
-    background-color: #fca311; /* Golden/Orange aura base */
+    background-color: #ffffff !important;
     background-image: 
-        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.7) 40px, rgba(255,255,255,0.7) 45px),
-        linear-gradient(135deg, rgba(255,100,0,0.5) 0%, rgba(255,200,0,0.6) 100%);
-    background-size: 200vw 200vh;
-    animation: dbzAuraSpeed 1.5s linear infinite;
-    background-attachment: fixed;
-    color: #333; /* Ensuring original text colors stick over the bright background */
+        repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,0,0,0.03) 60px, rgba(0,0,0,0.03) 62px),
+        repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,0,0,0.02) 80px, rgba(0,0,0,0.02) 82px),
+        linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+    background-size: 200vw 200vh !important;
+    animation: mangaAuraSlow 15s linear infinite !important;
+    background-attachment: fixed !important;
 }
 
-@keyframes dbzAuraSpeed {
+@keyframes mangaAuraSlow {
     from { background-position: 0 0; }
     to { background-position: -400px 400px; }
 }
@@ -68,10 +68,11 @@ body {
 /* For Dark Mode Backgrounds */
 @media (prefers-color-scheme: dark) {
     body {
-        background-color: #2b1d03; /* Dark Gold/Orange base */
+        background-color: #121212 !important;
         background-image: 
-            repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,0,0.1) 40px, rgba(255,255,0,0.1) 45px),
-            linear-gradient(135deg, rgba(100,40,0,0.8) 0%, rgba(150,100,0,0.8) 100%);
-        animation: dbzAuraSpeed 1.5s linear infinite;
+            repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.03) 60px, rgba(255,255,255,0.03) 62px),
+            repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.02) 80px, rgba(255,255,255,0.02) 82px),
+            linear-gradient(135deg, #1a1a1a 0%, #121212 100%) !important;
+        animation: mangaAuraSlow 15s linear infinite !important;
     }
 }
