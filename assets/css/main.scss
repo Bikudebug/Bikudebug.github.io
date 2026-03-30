@@ -42,24 +42,28 @@
     "vendor/font-awesome/brands"
 ;
 
-/* DBZ Manga "Live Movement" Aura Background (Black and White) */
+/* DBZ Goku Flying Nimbus Background */
 body {
-    background-color: #ffffff !important;
+    background-color: #87CEEB !important; /* Sky Blue */
     background-image: 
-        repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,0,0,0.03) 60px, rgba(0,0,0,0.03) 62px),
-        repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,0,0,0.02) 80px, rgba(0,0,0,0.02) 82px),
-        linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
-    background-size: 200vw 200vh !important;
-    animation: mangaAuraSlow 15s linear infinite !important;
+        url('../images/nimbus.png'),
+        linear-gradient(180deg, #5DADE2 0%, #AED6F6 100%) !important;
+    background-size: 
+        150px 150px, /* Nimbus size */
+        100vw 100vh !important;
+    background-repeat: 
+        no-repeat,
+        no-repeat !important;
+    animation: nimbusFly 25s linear infinite !important; /* Extremely slow, gentle flying */
     background-attachment: fixed !important;
 }
 
-@keyframes mangaAuraSlow {
-    from { background-position: 0 0; }
-    to { background-position: -400px 400px; }
+@keyframes nimbusFly {
+    from { background-position: -200px 15vh, 0 0; }
+    to { background-position: 110vw 15vh, 0 0; }
 }
 
-/* Fix profile picture: crop perfectly to the face and increase size */
+/* Fix profile picture: slightly rounded standard shape */
 .author__avatar img {
     border-radius: 8px !important;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
@@ -67,17 +71,15 @@ body {
     max-width: 100% !important;
     height: 200px !important;
     object-fit: cover !important;
-    object-position: center 15% !important; /* Crops to the face assuming it's near the top-center */
 }
 
 /* For Dark Mode Backgrounds */
 @media (prefers-color-scheme: dark) {
     body {
-        background-color: #121212 !important;
+        background-color: #1a2a44 !important; /* Night Sky Blue */
         background-image: 
-            repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.03) 60px, rgba(255,255,255,0.03) 62px),
-            repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.02) 80px, rgba(255,255,255,0.02) 82px),
-            linear-gradient(135deg, #1a1a1a 0%, #121212 100%) !important;
-        animation: mangaAuraSlow 15s linear infinite !important;
+            url('../images/nimbus.png'), 
+            linear-gradient(180deg, #101c30 0%, #1a2a44 100%) !important;
+        animation: nimbusFly 25s linear infinite !important;
     }
 }
