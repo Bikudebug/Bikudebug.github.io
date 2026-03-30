@@ -1,7 +1,7 @@
 # The following is the order of the links in the header of the website.
 main:
   - title: "Publications"
-  url: /publications/
+    url: /publications/
   
   - title: "CV"
-  url: /cv/
+    url: /cv/
