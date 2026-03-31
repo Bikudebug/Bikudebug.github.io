@@ -18,12 +18,11 @@ Currently, I am expanding my research into multimodal learning, with a focus on 
 ## Education
 
 **Indian Institute of Technology, Gandhinagar** (July 2023 - May 2025)
-* M.Sc. in Physics (CGPA: 7.05/10)
-* Coursework: Computer Vision, Deep Learning, Signal Processing, Machine Learning
+* M.Sc. in Physics 
 
 **Berhampur University, Berhampur** (June 2019 - July 2022)
-* B.Sc. in Physics (CGPA: 8.2/10)
-* Department Topper
+* B.Sc. in Physics 
+
 
 ## Research Interests
 
