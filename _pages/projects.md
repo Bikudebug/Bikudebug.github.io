@@ -30,7 +30,7 @@ Working on a collaborative Walmart–IIT Madras project to develop a deep-learni
 ---
 
 ### 3D Human Motion Representation & Retrieval
-**TIME@ARC Hub & Griffith University | Oct 2025 – Dec 2025
+**TIME@ARC Hub & Griffith University** | Oct 2025 – Dec 2025
 
 Developed a scalable pipeline for structured 3D human motion representation with semantic alignment. Normalized large-scale skeletal data and applied clustering to extract representative motion patterns, enabling efficient retrieval and action recognition.s.
 
