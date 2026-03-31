@@ -6,9 +6,6 @@ author_profile: true
 ---
 
 {% include base_path %}
-
-You can also download my full [**CV here**]({{ base_path }}/files/Bikash_CV.pdf) for a complete overview of my work.
-
 ---
 
 ## Ongoing Projects
