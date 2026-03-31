@@ -14,7 +14,7 @@ You can also download my full [**CV here**]({{ base_path }}/files/Bikash_CV.pdf)
 ## Ongoing Projects
 
 ### Team Sports Analytics (Cricket)
-**S Combinator Studio Pvt. Ltd. | Mar 2026 – Present
+**S Combinator Studio Pvt. Ltd.** | Mar 2026 – Present
 
 Working on developing computer vision models for cricket analytics, focusing on identifying phase transitions in gameplay and extracting key performance metrics for both batting and bowling. The goal is to provide interpretable insights that help players better understand their strategies and improve decision-making.
 
