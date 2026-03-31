@@ -26,11 +26,11 @@ author:
   avatar           : "profile_photo.png"
   name             : "Bikash Kumar Badatya"
   pronouns         : "he/him"  
-  bio              : "M.Sc. Physics at IIT Gandhinagar <br> Generative AI & Video Segmentation"
-  location         : "Gandhinagar, India"
-  employer         : "IIT Gandhinagar"
+  bio              : "Project Associate@ IIT Madras | Computer Vision | Sports Analysis 🪐"
+  location         : # removed
+  employer         : # removed
   uri              : # URL
-  email            : "bikash.badatya@iitgn.ac.in"  
+  email            : "bikash.badatya@iitgn.ac.in"
 
   # Academic websites
   academia         : # URL

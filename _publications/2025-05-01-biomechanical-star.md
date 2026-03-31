@@ -5,5 +5,9 @@ category: conferences
 permalink: /publication/2025-05-01-biomechanical-star
 date: 2025-05-01
 venue: 'IEEE STAR-2025'
-citation: 'Bikash Kumar Badatya, Vipul Baghel, Jyotirmoy Amin and Ravi S. Hegde. (2025).'
+paperurl: 'https://ieeexplore.ieee.org/document/11264777/'
 ---
+
+Published at **IEEE STAR-2025** (2025)
+
+[Read Paper](https://ieeexplore.ieee.org/document/11264777/)
