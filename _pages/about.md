@@ -7,11 +7,11 @@ redirect_from:
   - /about.html
 ---
 
-I hold a Master’s degree in Physics from IIT Gandhinagar, where I transitioned into the field of computer vision through hands-on research and project experience.
+I hold a Master's degree in Physics from IIT Gandhinagar, where my academic journey gradually evolved into a deep engagement with computer vision through hands-on research and project-driven exploration. During my time there, I had the opportunity to work under the guidance of [Prof. Ravi Hegde](https://iitgn.ac.in/faculty/ee/fac-ravi), whose mentorship played a key role in shaping my research perspective and technical foundation.
 
-Over the past year, I’ve worked on various problems involving pose-based action recognition, unsupervised motion segmentation, and graph neural networks for human activity understanding. My passion lies in developing models that learn from minimal supervision and make sense of complex visual dynamics, especially in sports and human-centric videos.
+My research experience spans pose-based action recognition, unsupervised motion segmentation, and graph neural networks for human activity understanding. I am particularly interested in designing learning frameworks that can operate with minimal supervision while capturing complex temporal and spatial dynamics in human-centric videos—especially in sports scenarios.
 
-Currently, my research is expanding into multimodal learning, with a focus on exploring vision-language models for action captioning and developing specialized large-scale datasets centered on biomechanical phases in throwing sports. 
+Currently, I am expanding my research into multimodal learning, with a focus on vision-language models for action captioning and the development of large-scale, structured datasets. My work is especially centered on modeling fine-grained biomechanical phases in throwing sports, aiming to bridge the gap between visual understanding and semantic interpretation.
 
 ♨️I am actively looking for PhD positions where I can contribute and grow as a researcher in computer vision.
 
