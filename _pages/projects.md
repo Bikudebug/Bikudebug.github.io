@@ -13,21 +13,28 @@ You can also download my full [**CV here**]({{ base_path }}/files/Bikash_CV.pdf)
 
 ## Ongoing Projects
 
-### Semantic 3D Human Pose Dictionary
-**TIME@ARC Hub & Griffith University** | Oct 2025 – Present
+### Team Sports Analytics (Cricket)
+**S Combinator Studio Pvt. Ltd. | Mar 2026 – Present
 
-Built a scalable pipeline to learn a unified 3D pose dictionary with semantic captions and compact embeddings. Normalized large-scale 3D skeleton data into a canonical representation and grouped poses using LSH-based clustering. Selected medoid poses as dictionary entries, enabling fast pose retrieval, action recognition, and motion understanding.
+Working on developing computer vision models for cricket analytics, focusing on identifying phase transitions in gameplay and extracting key performance metrics for both batting and bowling. The goal is to provide interpretable insights that help players better understand their strategies and improve decision-making.
 
 ---
 
+## Major Completed Projects
+
 ### Defect Analysis Model for Device Quality Inspection
-**Walmart & IIT Madras** | Nov 2025 – Present
+**Walmart & IIT Madras** | Nov 2025 – Feb 2026
 
 Working on a collaborative Walmart–IIT Madras project to develop a deep-learning–based defect analysis system that compares paired factory images to automatically identify subtle visual flaws and distinguish good devices from defective ones.
 
 ---
 
-## Major Completed Projects
+### 3D Human Motion Representation & Retrieval
+**TIME@ARC Hub & Griffith University | Oct 2025 – Dec 2025
+
+Developed a scalable pipeline for structured 3D human motion representation with semantic alignment. Normalized large-scale skeletal data and applied clustering to extract representative motion patterns, enabling efficient retrieval and action recognition.s.
+
+--- 
 
 ### UMPIRE: Unsupervised Temporal Action Localization via Deep Clustering
 **IIT Gandhinagar** | Jul 2025 – Oct 2025
@@ -47,8 +54,15 @@ Built an unsupervised ASTGCN + SOT framework to automatically detect biomechanic
 
 ---
 
+### Boxing Action Analysis
+**Research Project, IIT Gandhinagar** | Feb 2025 – May 2025
+
+Worked on a boxing action dataset, focusing on analyzing fine-grained motion patterns and temporal dynamics in combat sports. Explored techniques for action segmentation and performance understanding using computer vision methods.
+
+---
+
 ### Unsupervised Fine-Grained Action Localization in Sports Videos
-**IIT Gandhinagar** | Aug 2024 – Jan 2025
+**Research Project, IIT Gandhinagar** | Aug 2024 – Jan 2025
 
 Designed an unsupervised skeleton-based pipeline using ASTGCN pre-training and an Action Dynamics Metric (ADM) to detect fine-grained motion boundaries in untrimmed sports videos.
 
