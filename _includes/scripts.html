@@ -1,17 +1,2 @@
 <script type="module" src="{{ base_path }}/assets/js/main.min.js"></script>
 {% include analytics.html %}
-
-<!-- Custom Video Background (User Provided) -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var videoBg = document.createElement('video');
-    videoBg.id = 'bg-video';
-    videoBg.src = '{{ base_path }}/images/bg_video.mp4';
-    videoBg.autoplay = true;
-    videoBg.loop = true;
-    videoBg.muted = true;
-    videoBg.playsInline = true;
-    videoBg.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:0; pointer-events:none; opacity:1.0;';
-    document.body.prepend(videoBg);
-  });
-</script>
