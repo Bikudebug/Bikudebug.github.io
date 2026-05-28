@@ -26,16 +26,10 @@
       </div>
     {% endif %}
 
-    {% if include.type != "grid" and teaser %}
+    {% if post.gif %}
       <div class="archive__item-with-teaser">
         <div class="archive__item-teaser-side">
-          <img src=
-            {% if teaser contains "://" %}
-              "{{ teaser }}"
-            {% else %}
-              "{{ teaser | prepend: "/images/" | prepend: base_path }}"
-            {% endif %}
-            alt="{{ post.title }}" style="width:100px; height:70px; object-fit:cover; border-radius:4px;">
+          <img src="{{ post.gif }}" alt="{{ post.title }}">
         </div>
         <div class="archive__item-content">
     {% endif %}
@@ -94,7 +88,7 @@
       <p><a href="{{ post.bibtexurl }}">Download Bibtex</a></p>
     {% endif %}
 
-    {% if include.type != "grid" and teaser %}
+    {% if post.gif %}
         </div><!-- end archive__item-content -->
       </div><!-- end archive__item-with-teaser -->
     {% endif %}
