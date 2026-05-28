@@ -273,3 +273,68 @@ html, body {
 a, button, [role="button"], select, input[type="submit"], .lamp-toggle {
   cursor: pointer;
 }
+
+/* ==========================================================================
+   ROLLING QUOTE BANNER STYLING
+   ========================================================================== */
+
+.quote-roller {
+  position: relative;
+  height: 60px; /* fixed height for single row */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(47, 127, 147, 0.05);
+  border-left: 4px solid #2f7f93;
+  border-radius: 4px;
+  padding: 10px 20px;
+  margin: 1.5em 0;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+  border-top: 1px solid rgba(0,0,0,0.03);
+  border-right: 1px solid rgba(0,0,0,0.03);
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.quote-roller__line {
+  position: absolute;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1.05em;
+  font-style: italic;
+  text-align: center;
+  width: calc(100% - 40px);
+  pointer-events: none;
+  font-family: inherit;
+  
+  &.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  
+  &.exit {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  
+  &.highlight {
+    font-weight: bold;
+    font-style: normal;
+    color: #2f7f93;
+  }
+}
+
+/* Dark mode overrides for quote-roller */
+html[data-theme="dark"] .quote-roller {
+  background: rgba(255, 209, 102, 0.04);
+  border-left: 4px solid #ffd166;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  border-right: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+html[data-theme="dark"] .quote-roller__line.highlight {
+  color: #ffd166;
+}
