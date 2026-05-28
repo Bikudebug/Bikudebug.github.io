@@ -8,16 +8,12 @@ author_profile: true
 {% include base_path %}
 ---
 
-## Ongoing Projects
+## Major Completed Projects
 
 ### Team Sports Analytics (Cricket)
-**S Combinator Studio Pvt. Ltd.** | Mar 2026 – Present
+**S Combinator Studio Pvt. Ltd.** | Mar 2026 – April 2026
 
 Working on developing computer vision models for cricket analytics, focusing on identifying phase transitions in gameplay and extracting key performance metrics for both batting and bowling. The goal is to provide interpretable insights that help players better understand their strategies and improve decision-making.
-
----
-
-## Major Completed Projects
 
 ### Defect Analysis Model for Device Quality Inspection
 **Walmart & IIT Madras** | Nov 2025 – Feb 2026
