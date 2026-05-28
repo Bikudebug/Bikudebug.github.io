@@ -265,3 +265,11 @@
     height: 40px;
   }
 }
+
+/* Custom Cartoon Head Mouse Cursor Effect */
+html, body {
+  cursor: url('/images/head_iamge.png'), auto;
+}
+a, button, [role="button"], select, input[type="submit"], .lamp-toggle {
+  cursor: pointer;
+}
