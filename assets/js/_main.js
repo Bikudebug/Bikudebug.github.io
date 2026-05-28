@@ -32,17 +32,27 @@ let setTheme = (theme) => {
 
   if (use_theme === "dark") {
     $("html").attr("data-theme", "dark");
-    $("#theme-icon").removeClass("fa-sun").addClass("fa-moon");
+    $(".lamp-toggle").addClass("lamp-off").removeClass("lamp-on");
   } else if (use_theme === "light") {
     $("html").removeAttr("data-theme");
-    $("#theme-icon").removeClass("fa-moon").addClass("fa-sun");
+    $(".lamp-toggle").addClass("lamp-on").removeClass("lamp-off");
   }
 };
 
-// Toggle the theme manually
+// Toggle the theme manually with pull cord animation
 var toggleTheme = () => {
   const current_theme = $("html").attr("data-theme");
   const new_theme = current_theme === "dark" ? "light" : "dark";
+  
+  // Add pulling animation class to cord
+  const $cord = $(".lamp__cord");
+  $cord.addClass("pulling");
+  
+  // Play pull sound or trigger visual changes after animation finishes (approx 300ms)
+  setTimeout(() => {
+    $cord.removeClass("pulling");
+  }, 400);
+
   localStorage.setItem("theme", new_theme);
   setTheme(new_theme);
 };

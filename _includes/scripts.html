@@ -1,2 +1,71 @@
 <script type="module" src="{{ base_path }}/assets/js/main.min.js"></script>
 {% include analytics.html %}
+
+<!-- Interactive Lamp pull-cord activation and theme syncing script -->
+<script>
+  (function() {
+    function initLamp() {
+      var lampToggle = document.querySelector('.lamp-toggle');
+      if (!lampToggle) return;
+
+      // 1. Sync lamp state with active theme on load
+      var currentTheme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('theme');
+      if (currentTheme === 'dark') {
+        lampToggle.classList.add('lamp-off');
+        lampToggle.classList.remove('lamp-on');
+      } else {
+        lampToggle.classList.add('lamp-on');
+        lampToggle.classList.remove('lamp-off');
+      }
+
+      // 2. Wire up the pull cord click handler (replaces or runs alongside theme-toggle)
+      var cord = lampToggle.querySelector('.lamp__cord');
+      
+      // Override or extend theme-toggle click
+      var themeToggleLi = document.getElementById('theme-toggle');
+      if (themeToggleLi) {
+        // Remove existing jQuery handler to prevent duplication, or just bind directly
+        themeToggleLi.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Add visual pull animation
+          if (cord) {
+            cord.classList.add('pulling');
+            setTimeout(function() {
+              cord.classList.remove('pulling');
+            }, 400);
+          }
+
+          // Determine next theme
+          var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          var nextTheme = isDark ? 'light' : 'dark';
+
+          // Apply themes
+          if (nextTheme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            lampToggle.classList.add('lamp-off');
+            lampToggle.classList.remove('lamp-on');
+            localStorage.setItem('theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+            lampToggle.classList.add('lamp-on');
+            lampToggle.classList.remove('lamp-off');
+            localStorage.setItem('theme', 'light');
+          }
+
+          // Dispatch theme change event so that third-party scripts (like Plotly) can respond if they listen to attribute changes
+          var event = new CustomEvent('themeChanged', { detail: nextTheme });
+          document.dispatchEvent(event);
+        });
+      }
+    }
+
+    // Run when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initLamp);
+    } else {
+      initLamp();
+    }
+  })();
+</script>

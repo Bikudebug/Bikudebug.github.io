@@ -51,3 +51,202 @@
     height: 200px !important;
     object-fit: cover !important;
 }
+
+/* ==========================================================================
+   INTERACTIVE LAMP TOGGLE STYLING
+   ========================================================================== */
+
+/* Theme Toggle container adjustments */
+#theme-toggle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  margin-left: 1rem;
+  overflow: visible;
+  height: 50px; /* Keep navbar clean */
+  
+  a {
+    display: none !important; /* Hide old anchor completely */
+  }
+}
+
+.lamp-toggle {
+  position: relative;
+  width: 44px;
+  height: 100%;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  outline: none;
+  overflow: visible;
+}
+
+/* Ceiling Mount */
+.lamp__mount {
+  width: 12px;
+  height: 3px;
+  background: #555;
+  border-radius: 2px 2px 0 0;
+  position: absolute;
+  top: 0;
+}
+
+/* Wire Hanging the Lamp */
+.lamp__wire {
+  width: 2px;
+  height: 14px;
+  background: #666;
+  position: absolute;
+  top: 3px;
+}
+
+/* Lamp Shade */
+.lamp__shade {
+  width: 28px;
+  height: 14px;
+  background: var(--lamp-shade-color, #333);
+  border-radius: 14px 14px 2px 2px;
+  position: absolute;
+  top: 17px;
+  z-index: 5;
+  transition: background 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  
+  .lamp__shade-inner {
+    width: 22px;
+    height: 3px;
+    background: var(--lamp-shade-inner-color, #ffd166);
+    border-radius: 50%;
+    margin-bottom: -1px;
+    opacity: var(--lamp-glow-opacity, 1);
+    transition: all 0.3s ease;
+  }
+}
+
+/* The Light Bulb */
+.lamp__bulb {
+  width: 10px;
+  height: 12px;
+  background: var(--lamp-bulb-color, #ffd166);
+  border-radius: 50% 50% 30% 30%;
+  position: absolute;
+  top: 27px;
+  z-index: 4;
+  transition: all 0.3s ease;
+  box-shadow: var(--lamp-bulb-shadow, 0 0 10px #ffd166);
+}
+
+/* Light Glow Overlay */
+.lamp__glow {
+  position: absolute;
+  top: 22px;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.25) 0%, rgba(255, 209, 102, 0.05) 50%, rgba(255, 209, 102, 0) 100%);
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--lamp-glow-opacity, 1);
+  transition: opacity 0.3s ease;
+  transform: translateY(6px);
+}
+
+/* The Pull Cord Rope & Bead */
+.lamp__cord {
+  position: absolute;
+  top: 24px;
+  left: 30px; /* Offset to hang nicely beside the shade */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 6;
+  
+  /* Bouncy spring-like pulling animation when triggered */
+  &.pulling {
+    animation: cordPull 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  }
+}
+
+.lamp__cord-line {
+  width: 1px;
+  height: 24px;
+  background: #888;
+  transition: background 0.3s ease;
+}
+
+.lamp__cord-bead {
+  width: 6px;
+  height: 6px;
+  background: var(--lamp-bead-color, #222);
+  border-radius: 50%;
+  margin-top: -1px;
+  transition: background 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* THEME SPECIFIC CUSTOM VARIABLE TOKENS */
+
+/* Lamp ON State (Light Mode default) */
+.lamp-on {
+  --lamp-shade-color: #2f7f93; /* Premium teal matching Biku's primary color */
+  --lamp-shade-inner-color: #ffd166;
+  --lamp-bulb-color: #ffd166;
+  --lamp-bead-color: #2f7f93;
+  --lamp-glow-opacity: 1;
+  --lamp-bulb-shadow: 0 0 12px 2px #ffd166, inset 0 -1px 2px rgba(255,255,255,0.6);
+  
+  .lamp__wire {
+    background: #2f7f93;
+  }
+}
+
+/* Lamp OFF State (Dark Mode active) */
+.lamp-off {
+  --lamp-shade-color: #555555;
+  --lamp-shade-inner-color: #333333;
+  --lamp-bulb-color: #222222;
+  --lamp-bead-color: #cccccc;
+  --lamp-glow-opacity: 0;
+  --lamp-bulb-shadow: none;
+  
+  .lamp__wire {
+    background: #555;
+  }
+  
+  .lamp__cord-line {
+    background: #666;
+  }
+}
+
+/* Cord pulling animation */
+@keyframes cordPull {
+  0% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(10px); /* Pull down */
+  }
+  60% {
+    transform: translateY(-2px); /* Slight bounce up */
+  }
+  100% {
+    transform: translateY(0); /* Return to resting */
+  }
+}
+
+/* Quick responsive tweak to make sure it matches navigation layout */
+@media (max-width: 600px) {
+  #theme-toggle {
+    margin-left: 0.5rem;
+    height: 40px;
+  }
+  .lamp__cord {
+    left: 26px;
+  }
+}
