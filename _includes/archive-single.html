@@ -51,6 +51,8 @@
         {% elsif post.collection == 'publications' %}
           {% if post.venue contains 'Under Review' %}
             <p><i>{{ post.venue }}</i>, {{ post.date | default: "1900-01-01" | date: "%Y" }} </p>
+          {% elsif post.venue contains 'accepted at' or post.venue contains 'Accepted at' %}
+            <p>{{ post.venue }}</p>
           {% else %}
             <p>Published in <i>{{ post.venue }}</i>, {{ post.date | default: "1900-01-01" | date: "%Y" }} </p>
           {% endif %}
