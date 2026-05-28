@@ -92,6 +92,10 @@
       <p><a href="{{ post.bibtexurl }}">Download Bibtex</a></p>
     {% endif %}
 
+    {% if post.dataseturl %}
+      <p><a href="{{ post.dataseturl }}" target="_blank"><i class="fa fa-database" aria-hidden="true"></i> Dataset</a></p>
+    {% endif %}
+
     {% if post.gif %}
         </div><!-- end archive__item-content -->
       </div><!-- end archive__item-with-teaser -->

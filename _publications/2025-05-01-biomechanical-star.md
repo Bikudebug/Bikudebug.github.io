@@ -7,4 +7,5 @@ date: 2025-05-01
 venue: 'IEEE STAR-2025'
 paperurl: 'https://ieeexplore.ieee.org/document/11264777/'
 gif: '/images/javelin-throw.gif'
+dataseturl: 'https://github.com/Bikudebug/Javelin_Throw_Dataset/tree/main'
 ---
