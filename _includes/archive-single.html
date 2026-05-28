@@ -66,9 +66,9 @@
     
     {% capture link_list %}
       {%- if post.paperurl -%}<a href="{{ post.paperurl }}">Download Paper</a>{%- endif -%}
-      {%- if post.slidesurl -%}{%- if post.paperurl -%} | {%- endif -%}<a href="{{ post.slidesurl }}">Download Slides</a>{%- endif -%}
-      {%- if post.bibtexurl -%}{%- if post.paperurl or post.slidesurl -%} | {%- endif -%}<a href="{{ post.bibtexurl }}">Download Bibtex</a>{%- endif -%}
-      {%- if post.dataseturl -%}{%- if post.paperurl or post.slidesurl or post.bibtexurl -%} | {%- endif -%}<a href="{{ post.dataseturl }}">Dataset</a>{%- endif -%}
+      {%- if post.slidesurl -%}{%- if post.paperurl -%}&nbsp;|&nbsp;{%- endif -%}<a href="{{ post.slidesurl }}">Download Slides</a>{%- endif -%}
+      {%- if post.bibtexurl -%}{%- if post.paperurl or post.slidesurl -%}&nbsp;|&nbsp;{%- endif -%}<a href="{{ post.bibtexurl }}">Download Bibtex</a>{%- endif -%}
+      {%- if post.dataseturl -%}{%- if post.paperurl or post.slidesurl or post.bibtexurl -%}&nbsp;|&nbsp;{%- endif -%}<a href="{{ post.dataseturl }}">Dataset</a>{%- endif -%}
     {% endcapture %}
 
     {% if post.citation %}
