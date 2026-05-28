@@ -7,31 +7,19 @@ redirect_from:
   - /about.html
 ---
 
-<div class="quote-roller" id="quoteRoller">
-  <div class="quote-roller__line active">We are born in one day,</div>
-  <div class="quote-roller__line">We die in one day,</div>
-  <div class="quote-roller__line">We can change in one day,</div>
-  <div class="quote-roller__line">We can fall in love in one day,</div>
-  <div class="quote-roller__line">We can succeed in one day,</div>
-  <div class="quote-roller__line">Anything can happen in just one day.</div>
-  <div class="quote-roller__line highlight">Start with day one, and your 'one day' will come.</div>
-</div>
-
-<script>
+<div class="quote-roller" id="quoteRoller" markdown="0"><div class="quote-roller__line active">We are born in one day,</div><div class="quote-roller__line">We die in one day,</div><div class="quote-roller__line">We can change in one day,</div><div class="quote-roller__line">We can fall in love in one day,</div><div class="quote-roller__line">We can succeed in one day,</div><div class="quote-roller__line">Anything can happen in just one day.</div><div class="quote-roller__line highlight">Start with day one, and your 'one day' will come.</div></div>
+<script markdown="0">
   document.addEventListener("DOMContentLoaded", function() {
-    const lines = document.querySelectorAll("#quoteRoller .quote-roller__line");
+    var lines = document.querySelectorAll("#quoteRoller .quote-roller__line");
     if (lines.length === 0) return;
-    let currentIndex = 0;
-    
-    setInterval(() => {
-      const currentLine = lines[currentIndex];
+    var currentIndex = 0;
+    setInterval(function() {
+      var currentLine = lines[currentIndex];
       currentLine.classList.remove("active");
       currentLine.classList.add("exit");
-      
-      setTimeout(() => {
+      setTimeout(function() {
         currentLine.classList.remove("exit");
       }, 600);
-      
       currentIndex = (currentIndex + 1) % lines.length;
       lines[currentIndex].classList.add("active");
     }, 3800);
