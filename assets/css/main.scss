@@ -74,56 +74,50 @@
 .lamp-toggle {
   position: relative;
   width: 44px;
-  height: 100%;
+  height: 60px; /* Give it enough height */
   cursor: pointer;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center; /* Center horizontally */
   user-select: none;
   outline: none;
   overflow: visible;
 }
 
-/* Ceiling Mount */
-.lamp__mount {
-  width: 12px;
-  height: 3px;
-  background: #555;
-  border-radius: 2px 2px 0 0;
-  position: absolute;
-  top: 0;
-}
-
 /* Wire Hanging the Lamp */
 .lamp__wire {
   width: 2px;
-  height: 14px;
-  background: #666;
+  height: 25px; /* wire length */
+  background: var(--lamp-wire-color, #666);
   position: absolute;
-  top: 3px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
 }
 
 /* Lamp Shade */
 .lamp__shade {
-  width: 28px;
-  height: 14px;
+  width: 32px;
+  height: 16px;
   background: var(--lamp-shade-color, #333);
-  border-radius: 14px 14px 2px 2px;
+  border-radius: 16px 16px 2px 2px;
   position: absolute;
-  top: 17px;
-  z-index: 5;
+  top: 18px; /* sits on wire */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
   transition: background 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
   align-items: flex-end;
   
   .lamp__shade-inner {
-    width: 22px;
-    height: 3px;
+    width: 24px;
+    height: 4px;
     background: var(--lamp-shade-inner-color, #ffd166);
     border-radius: 50%;
-    margin-bottom: -1px;
+    margin-bottom: -2px;
     opacity: var(--lamp-glow-opacity, 1);
     transition: all 0.3s ease;
   }
@@ -131,13 +125,15 @@
 
 /* The Light Bulb */
 .lamp__bulb {
-  width: 10px;
-  height: 12px;
+  width: 12px;
+  height: 14px;
   background: var(--lamp-bulb-color, #ffd166);
   border-radius: 50% 50% 30% 30%;
   position: absolute;
-  top: 27px;
-  z-index: 4;
+  top: 30px; /* shade top + 12 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
   transition: all 0.3s ease;
   box-shadow: var(--lamp-bulb-shadow, 0 0 10px #ffd166);
 }
@@ -145,44 +141,44 @@
 /* Light Glow Overlay */
 .lamp__glow {
   position: absolute;
-  top: 22px;
-  width: 60px;
-  height: 60px;
-  background: radial-gradient(circle, rgba(255, 209, 102, 0.25) 0%, rgba(255, 209, 102, 0.05) 50%, rgba(255, 209, 102, 0) 100%);
+  top: 25px;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px; /* center it */
+  background: radial-gradient(circle, rgba(255, 209, 102, 0.4) 0%, rgba(255, 209, 102, 0.1) 40%, rgba(255, 209, 102, 0) 70%);
   border-radius: 50%;
   z-index: 2;
   pointer-events: none;
   opacity: var(--lamp-glow-opacity, 1);
   transition: opacity 0.3s ease;
-  transform: translateY(6px);
+  transform: translateY(10px);
 }
 
 /* The Pull Cord Rope & Bead */
 .lamp__cord {
   position: absolute;
-  top: 24px;
-  left: 30px; /* Offset to hang nicely beside the shade */
+  top: 28px; /* start from under the shade */
+  left: 50%;
+  transform: translateX(10px); /* offset to the right of bulb */
   display: flex;
   flex-direction: column;
   align-items: center;
-  z-index: 6;
-  
-  /* Bouncy spring-like pulling animation when triggered */
-  &.pulling {
-    animation: cordPull 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-  }
+  z-index: 7;
+  transition: transform 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 .lamp__cord-line {
-  width: 1px;
-  height: 24px;
-  background: #888;
-  transition: background 0.3s ease;
+  width: 2px;
+  /* Dark mode is OFF, so the cord is longer (pulled down). Light mode is ON, so cord is shorter (retracted) */
+  height: var(--lamp-cord-length, 25px);
+  background: var(--lamp-cord-color, #aaa);
+  transition: height 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97), background 0.3s ease;
 }
 
 .lamp__cord-bead {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: var(--lamp-bead-color, #222);
   border-radius: 50%;
   margin-top: -1px;
@@ -192,52 +188,36 @@
 
 /* THEME SPECIFIC CUSTOM VARIABLE TOKENS */
 
-/* Lamp ON State (Light Mode default) */
+/* Lamp ON State (Light Mode default) - Cord is pulled UP (shorter) */
 .lamp-on {
-  --lamp-shade-color: #2f7f93; /* Premium teal matching Biku's primary color */
+  --lamp-shade-color: #2f7f93;
   --lamp-shade-inner-color: #ffd166;
   --lamp-bulb-color: #ffd166;
   --lamp-bead-color: #2f7f93;
+  --lamp-cord-color: #666;
+  --lamp-wire-color: #2f7f93;
+  --lamp-cord-length: 15px; /* Short cord when ON */
   --lamp-glow-opacity: 1;
   --lamp-bulb-shadow: 0 0 12px 2px #ffd166, inset 0 -1px 2px rgba(255,255,255,0.6);
-  
-  .lamp__wire {
-    background: #2f7f93;
-  }
 }
 
-/* Lamp OFF State (Dark Mode active) */
+/* Lamp OFF State (Dark Mode active) - Cord is pulled DOWN (longer) */
 .lamp-off {
   --lamp-shade-color: #555555;
   --lamp-shade-inner-color: #333333;
   --lamp-bulb-color: #222222;
   --lamp-bead-color: #cccccc;
+  --lamp-cord-color: #999;
+  --lamp-wire-color: #555;
+  --lamp-cord-length: 35px; /* Long cord when OFF */
   --lamp-glow-opacity: 0;
   --lamp-bulb-shadow: none;
-  
-  .lamp__wire {
-    background: #555;
-  }
-  
-  .lamp__cord-line {
-    background: #666;
-  }
 }
 
-/* Cord pulling animation */
-@keyframes cordPull {
-  0% {
-    transform: translateY(0);
-  }
-  30% {
-    transform: translateY(10px); /* Pull down */
-  }
-  60% {
-    transform: translateY(-2px); /* Slight bounce up */
-  }
-  100% {
-    transform: translateY(0); /* Return to resting */
-  }
+/* Springy bounce animation on click */
+.lamp__cord.pulling {
+  /* Extra stretch when actively clicked/pulled */
+  transform: translateX(10px) translateY(8px);
 }
 
 /* Quick responsive tweak to make sure it matches navigation layout */
@@ -245,8 +225,5 @@
   #theme-toggle {
     margin-left: 0.5rem;
     height: 40px;
-  }
-  .lamp__cord {
-    left: 26px;
   }
 }
