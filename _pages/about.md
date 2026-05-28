@@ -33,6 +33,10 @@ Currently, I am exploring multimodal learning, focusing on vision-language model
 * Sports Analytics
 * Activity Recognition
 
+## Patents
+
+* **Motion-Driven Unsupervised Temporal Segmentation System for Video Data**, Inventors: Vipul Baghel, Ravi Sadanand Hegde, and Bikash Kumar Badatya, Indian Patent Application No: **202621045701**, Filed: April 2026, Applicant: IIT Gandhinagar.
+
 ## Hobbies
 
 Watching anime/movies.
