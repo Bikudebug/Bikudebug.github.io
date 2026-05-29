@@ -23,7 +23,7 @@ repository               : "Bikudebug/Bikudebug.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "passport_bikash.png"
+  avatar           : "profile_photo.png"
   name             : "Bikash Kumar Badatya"
   pronouns         : "he/him"  
   bio              : "MSc @ IIT Gandhinagar | Computer Vision | Sports Analysis 🪐"
