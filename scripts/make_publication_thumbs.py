@@ -672,6 +672,179 @@ def umpire():
 
 
 # --------------------------------------------------------------------------- #
+# 10. Golf - four keyframes of a swing over the eight-phase segmentation
+# --------------------------------------------------------------------------- #
+
+# address, top of backswing, impact, finish. Face-on view, target to the right.
+# A golf grip is both hands on one shaft, so the two wrists sit almost on top of
+# each other and the club comes out of the right one. The hands are kept out to
+# the side of the body rather than over it: drawn down the centre line, the two
+# arms and the torso close into a diamond that reads as a shape, not as arms.
+GOLF_POSES = [
+    # address - square and level, club soled behind the ball
+    dict(head=(48, 20), neck=(48, 34), pelvis=(48, 70),
+         elbow_r=(58, 50), wrist_r=(64, 64), elbow_l=(44, 52), wrist_l=(60, 62),
+         knee_r=(58, 96), ankle_r=(62, 126), knee_l=(38, 96), ankle_l=(34, 126)),
+    # top of the backswing - hands above the trail shoulder
+    dict(head=(48, 20), neck=(48, 32), pelvis=(52, 70),
+         elbow_r=(66, 32), wrist_r=(74, 16), elbow_l=(60, 36), wrist_l=(70, 18),
+         knee_r=(62, 96), ankle_r=(64, 126), knee_l=(38, 96), ankle_l=(36, 126)),
+    # impact - hips driven at the target, lead leg posted straight, trail heel up
+    dict(head=(46, 20), neck=(48, 34), pelvis=(54, 68),
+         elbow_r=(60, 48), wrist_r=(66, 62), elbow_l=(46, 50), wrist_l=(62, 60),
+         knee_r=(66, 98), ankle_r=(70, 126), knee_l=(42, 94), ankle_l=(34, 120)),
+    # finish - fully through, weight on the lead leg, trail foot up on its toe
+    dict(head=(52, 20), neck=(52, 34), pelvis=(50, 70),
+         elbow_r=(38, 30), wrist_r=(26, 20), elbow_l=(40, 32), wrist_l=(28, 22),
+         knee_r=(56, 96), ankle_r=(58, 126), knee_l=(46, 96), ankle_l=(42, 120)),
+]
+
+# Where the club head sits in each pose, in the same local box as the joints.
+# Frames 0 and 2 put it on the ball, out to the right and well clear of the
+# legs; 1 and 3 swing it up past the shoulder, above the head circle rather
+# than through it.
+GOLF_SHAFT = [(82, 128), (38, 4), (80, 127), (60, 6)]
+
+# On the ground at address and at the top, gone once the ball has been struck.
+BALL_AT = (88, 126)
+
+
+def golf():
+    img, d = canvas()
+    pad_x, pad_top = 20 * S, 42 * S
+    baseline = 170 * S
+    cell = phase_grid(d, len(GOLF_POSES), pad_x, pad_top, baseline)
+    box_h = baseline - pad_top
+
+    for i, pose in enumerate(GOLF_POSES):
+        colour = lerp(FADE, INK, i / (len(GOLF_POSES) - 1))
+        ox = pad_x + cell * i + cell * 0.08
+        bw = cell * 0.84
+
+        def local(lx, ly, ox=ox, bw=bw):
+            return (ox + lx / LOCAL_W * bw, pad_top + ly / LOCAL_H * box_h)
+
+        pt = skeleton(d, pose, ox, pad_top, bw, box_h, colour)
+
+        # shaft out of the hands, with the head as a short thick stroke square
+        # to it - that reads as a club head whichever way the shaft points.
+        hands, tip = pt("wrist_r"), local(*GOLF_SHAFT[i])
+        d.line([hands, tip], fill=colour, width=max(2, int(2.2 * S)))
+        vx, vy = tip[0] - hands[0], tip[1] - hands[1]
+        n = math.hypot(vx, vy) or 1
+        nx, ny = -vy / n, vx / n
+        d.line([(tip[0] - nx * 4 * S, tip[1] - ny * 4 * S),
+                (tip[0] + nx * 4 * S, tip[1] + ny * 4 * S)],
+               fill=colour, width=max(4, int(5 * S)))
+
+        if i < 3:
+            bx, by = local(*BALL_AT)
+            br = 4 * S
+            d.ellipse([bx - br, by - br, bx + br, by + br], fill=colour)
+
+    # the eight canonical phases the detector splits the clip into
+    ty, th, n = baseline + 16 * S, 24 * S, 8
+    segments = [(i / n + 0.008, (i + 1) / n - 0.008, lerp(FADE, INK, i / (n - 1)))
+                for i in range(n)]
+    timeline(d, pad_x, W - pad_x, ty, th, segments, ticks=False)
+
+    chrome(d, "Golf Swing", "eight-phase swing segmentation", baseline,
+           caption_y=ty + th + 12 * S)
+    return img
+
+
+# --------------------------------------------------------------------------- #
+# 11. Tennis - a stroke at contact, and the strokes found in the rally
+# --------------------------------------------------------------------------- #
+
+# forehand at contact: the racket arm extended out in front, weight forward
+TENNIS_POSE = dict(head=(46, 24), neck=(48, 38), pelvis=(50, 74),
+                   elbow_r=(64, 46), wrist_r=(78, 38), elbow_l=(34, 50),
+                   wrist_l=(26, 62), knee_r=(64, 98), ankle_r=(72, 126),
+                   knee_l=(36, 98), ankle_l=(28, 126))
+
+
+def racket(d, hand, angle_deg, reach, colour):
+    """A grip out of the hand into a strung oval head.
+
+    The strings are a grid, not a single cross: two lines through the middle of
+    a circle read as a gunsight. Returns the far edge of the string bed, which
+    is where the ball leaves.
+    """
+    hx, hy = hand
+    dx, dy = math.cos(math.radians(angle_deg)), -math.sin(math.radians(angle_deg))
+    d.line([hand, (hx + dx * reach * 0.44, hy + dy * reach * 0.44)],
+           fill=colour, width=max(2, int(2.4 * S)))
+    cx, cy = hx + dx * reach * 0.74, hy + dy * reach * 0.74
+    rx, ry = reach * 0.30, reach * 0.24
+    d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry], outline=colour,
+              width=max(2, int(2.2 * S)))
+    sw = max(1, int(1.2 * S))
+    for frac in (-0.5, 0.0, 0.5):
+        # chord half-lengths so the strings stop at the frame, not past it
+        d.line([(cx + rx * frac, cy - ry * 0.86), (cx + rx * frac, cy + ry * 0.86)],
+               fill=colour, width=sw)
+        d.line([(cx - rx * 0.86, cy + ry * frac), (cx + rx * 0.86, cy + ry * frac)],
+               fill=colour, width=sw)
+    return (cx + dx * rx, cy + dy * ry)
+
+
+def net(d, x, baseline, h, half_w, colour):
+    """The net seen from the side: a wide, low mesh band under a white tape.
+
+    Kept much wider than it is tall. Drawn anywhere near square it stops
+    reading as a net and starts reading as a window or a bookshelf.
+    """
+    lw = max(2, int(2 * S))
+    top = baseline - h
+    d.line([(x - half_w, top), (x + half_w, top)], fill=colour, width=lw)
+    for end in (-1, 1):
+        d.line([(x + half_w * end, top), (x + half_w * end, baseline)],
+               fill=colour, width=lw)
+    mesh = max(1, int(1.3 * S))
+    for i in range(1, 8):
+        mx = x - half_w + 2 * half_w * i / 8
+        d.line([(mx, top), (mx, baseline)], fill=colour, width=mesh)
+    for i in range(1, 3):
+        my = top + h * i / 3
+        d.line([(x - half_w, my), (x + half_w, my)], fill=colour, width=mesh)
+
+
+def tennis():
+    img, d = canvas()
+    pad_top = 42 * S
+    baseline = 170 * S
+    box_h = baseline - pad_top
+
+    d.line([(20 * S, baseline), (W - 20 * S, baseline)],
+           fill=GROUND, width=max(2, int(1.5 * S)))
+
+    pt = skeleton(d, TENNIS_POSE, 30 * S, pad_top, 150 * S, box_h, INK)
+    bed = racket(d, pt("wrist_r"), 22, 42 * S, INK)
+
+    net(d, 268 * S, baseline, 32 * S, 62 * S, MUTED)
+
+    # the ball just off the strings, clearing the net on its way across. It sits
+    # ahead of the bed rather than on it - drawn inside the frame it turns the
+    # strung head into a bullseye.
+    ball = (bed[0] + 11 * S, bed[1] - 4 * S)
+    br = 4.5 * S
+    d.ellipse([ball[0] - br, ball[1] - br, ball[0] + br, ball[1] + br], fill=INK)
+    dotted_curve(d, ball, (W - 34 * S, baseline - 48 * S), 30 * S, MUTED, 1.8 * S)
+
+    # the strokes the classifier finds in the clip, the rest of it neutral
+    ty, th = baseline + 16 * S, 24 * S
+    mid = lerp(FADE, INK, 0.5)
+    timeline(d, 20 * S, W - 20 * S, ty, th,
+             ((0.04, 0.22, INK), (0.34, 0.52, mid), (0.66, 0.90, FADE)),
+             ticks=False)
+
+    chrome(d, "Tennis Strokes", "stroke segmentation from tracked pose", baseline,
+           caption_y=ty + th + 12 * S)
+    return img
+
+
+# --------------------------------------------------------------------------- #
 
 def main():
     print("writing thumbnails:")
@@ -684,6 +857,8 @@ def main():
     save(defect_analysis(), "defect-pairs.png")
     save(motion_retrieval(), "motion-retrieval.png")
     save(umpire(), "umpire-clusters.png")
+    save(golf(), "golf-swing-phases.png")
+    save(tennis(), "tennis-strokes.png")
 
 
 if __name__ == "__main__":
