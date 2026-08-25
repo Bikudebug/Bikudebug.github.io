@@ -165,7 +165,12 @@ html[data-theme="dark"] {
    square and the image cropped into it. height:auto + aspect-ratio keeps it a
    true circle even when the sidebar is narrower than 180px - pinning both
    width and height in px gives an ellipse as soon as max-width clamps one of
-   them. object-position is biased upward so the crop keeps the face. */
+   them.
+
+   object-position: cover crops 272px vertically, and 46% of that puts the
+   crop window at y=125..475, whose centre (300) is the centre of the head
+   (hair top ~165, chin ~435). Only the vertical value matters here; the
+   image width fills the box exactly, so there is no horizontal crop. */
 .author__avatar img {
   display: block;
   width: 180px !important;
@@ -175,7 +180,7 @@ html[data-theme="dark"] {
   padding: 0 !important;
   border-radius: 50% !important;
   object-fit: cover !important;
-  object-position: center 22% !important;
+  object-position: center 46% !important;
   border: 1px solid var(--global-border-color);
   box-shadow: none !important;
   margin: 0 auto;
