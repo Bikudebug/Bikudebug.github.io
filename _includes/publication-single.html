@@ -1,0 +1,71 @@
+{% include base_path %}
+
+{%- comment -%}
+  Renders one publication in the list on /publications/.
+  Expects `post` to be a document from the `publications` collection.
+  Recognised front matter: authors, venue, venue_short, status, paperurl,
+  arxivurl, codeurl, dataseturl, slidesurl, bibtexurl, gif.
+{%- endcomment -%}
+
+{%- capture me_bold -%}<span class="pub-me">{{ site.author.name }}</span>{%- endcapture -%}
+{%- assign headline_url = post.paperurl | default: post.arxivurl -%}
+
+<div class="pub-item">
+  {% if post.gif %}
+    <div class="pub-thumb">
+      <img src="{{ post.gif }}" alt="{{ post.title | strip_html | escape }}" loading="lazy">
+    </div>
+  {% endif %}
+
+  <div class="pub-body">
+    <h3 class="pub-title">
+      {% if headline_url %}
+        <a href="{{ headline_url }}">{{ post.title }}</a>
+      {% else %}
+        {{ post.title }}
+      {% endif %}
+    </h3>
+
+    {% assign author_line = post.authors | strip %}
+    {% if author_line != "" %}
+      <p class="pub-authors">{{ author_line | replace: site.author.name, me_bold }}</p>
+    {% endif %}
+
+    <p class="pub-venue">
+      {% assign venue_name = post.venue | strip %}
+      {% if venue_name != "" %}
+        <span class="pub-venue-name">{{ venue_name }}</span>,
+      {% endif %}
+      <span class="pub-year">{{ post.date | default: "1900-01-01" | date: "%Y" }}</span>
+      {% if post.status %}
+        <span class="pub-badge">{{ post.status }}</span>
+      {% endif %}
+    </p>
+
+    {% capture pub_links %}
+      {%- if post.paperurl -%}
+        <a class="pub-link" href="{{ post.paperurl }}"><i class="fas fa-file-lines" aria-hidden="true"></i>Paper</a>
+      {%- endif -%}
+      {%- if post.arxivurl -%}
+        <a class="pub-link" href="{{ post.arxivurl }}"><i class="fas fa-book-open" aria-hidden="true"></i>arXiv</a>
+      {%- endif -%}
+      {%- if post.codeurl -%}
+        <a class="pub-link" href="{{ post.codeurl }}"><i class="fab fa-github" aria-hidden="true"></i>Code</a>
+      {%- endif -%}
+      {%- if post.dataseturl -%}
+        <a class="pub-link" href="{{ post.dataseturl }}"><i class="fas fa-database" aria-hidden="true"></i>Dataset</a>
+      {%- endif -%}
+      {%- if post.slidesurl -%}
+        <a class="pub-link" href="{{ post.slidesurl }}"><i class="fas fa-display" aria-hidden="true"></i>Slides</a>
+      {%- endif -%}
+      {%- if post.bibtexurl -%}
+        <a class="pub-link" href="{{ post.bibtexurl }}"><i class="fas fa-quote-right" aria-hidden="true"></i>BibTeX</a>
+      {%- endif -%}
+    {% endcapture %}
+
+    {% assign pub_links = pub_links | strip %}
+    {% if pub_links != "" %}
+      <p class="pub-links">{{ pub_links }}</p>
+    {% endif %}
+  </div>
+</div>

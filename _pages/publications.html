@@ -5,32 +5,39 @@ permalink: /publications/
 author_profile: true
 ---
 
-{% if site.author.googlescholar %}
-  <div class="wordwrap">You can also find my articles on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
-{% endif %}
-
 {% include base_path %}
 
-<!-- New style rendering if publication categories are defined -->
-{% if site.publication_category %}
-  {% for category in site.publication_category  %}
-    {% assign title_shown = false %}
-    {% for post in site.publications reversed %}
-      {% if post.category != category[0] %}
-        {% continue %}
-      {% endif %}
-      {% unless title_shown %}
-        <h2>{{ category[1].title }}</h2><hr />
-        {% assign title_shown = true %}
-      {% endunless %}
-      {% include archive-single.html %}
-    {% endfor %}
-  {% endfor %}
-{% else %}
-  {% for post in site.publications reversed %}
-    {% include archive-single.html %}
-  {% endfor %}
+{% if site.author.googlescholar %}
+  <p class="pub-intro">
+    A full list with citation counts is on my
+    <a href="{{ site.author.googlescholar }}">Google Scholar profile</a>.
+    My name is shown in <span class="pub-me">bold</span> in each author list.
+  </p>
 {% endif %}
 
+{% assign all_pubs = site.publications | sort: 'date' | reverse %}
+{% assign under_review = all_pubs | where: 'status', 'Under Review' %}
+{% assign settled = all_pubs | where_exp: 'p', "p.status != 'Under Review'" %}
 
+{%- comment -%}
+  Work that is not yet accepted anywhere is listed separately, so a year
+  heading never implies a publication year it does not have.
+{%- endcomment -%}
+{% if under_review.size > 0 %}
+  <h2 class="pub-group-title">Under Review</h2>
+  <div class="pub-list">
+    {% for post in under_review %}
+      {% include publication-single.html %}
+    {% endfor %}
+  </div>
+{% endif %}
 
+{% assign by_year = settled | group_by_exp: 'p', "p.date | date: '%Y'" | sort: 'name' | reverse %}
+{% for year in by_year %}
+  <h2 class="pub-group-title">{{ year.name }}</h2>
+  <div class="pub-list">
+    {% for post in year.items %}
+      {% include publication-single.html %}
+    {% endfor %}
+  </div>
+{% endfor %}
