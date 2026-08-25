@@ -161,14 +161,24 @@ html[data-theme="dark"] {
    AUTHOR SIDEBAR - plain round profile photo
    ========================================================================== */
 
+/* The source photo is a tall portrait (350x622), so the box has to be forced
+   square and the image cropped into it. height:auto + aspect-ratio keeps it a
+   true circle even when the sidebar is narrower than 180px - pinning both
+   width and height in px gives an ellipse as soon as max-width clamps one of
+   them. object-position is biased upward so the crop keeps the face. */
 .author__avatar img {
+  display: block;
   width: 180px !important;
   max-width: 100% !important;
-  height: 180px !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+  padding: 0 !important;
   border-radius: 50% !important;
-  object-fit: cover;
+  object-fit: cover !important;
+  object-position: center 22% !important;
   border: 1px solid var(--global-border-color);
   box-shadow: none !important;
+  margin: 0 auto;
 }
 
 .author__bio {
