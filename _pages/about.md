@@ -40,4 +40,6 @@ B.Sc. in Physics
 
 Football and cricket, photography, travelling, and a steady diet of anime and films.
 
-> *Start with day one, and your 'one day' will come.*
+<div class="closing-quote" markdown="0">
+  <p>Start with day one, and your &lsquo;one day&rsquo; will come.</p>
+</div>

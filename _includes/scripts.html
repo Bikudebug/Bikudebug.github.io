@@ -1,2 +1,17 @@
 <script type="module" src="{{ base_path }}/assets/js/main.min.js"></script>
 {% include analytics.html %}
+
+<!-- Keyboard support for the theme toggle (it is an <a role="button">, so it
+     does not fire on Enter/Space by itself) -->
+<script>
+  (function () {
+    var toggle = document.querySelector('#theme-toggle a[role="button"]');
+    if (!toggle) return;
+    toggle.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ' || event.key === 'Spacebar') {
+        event.preventDefault();
+        toggle.click();
+      }
+    });
+  })();
+</script>
