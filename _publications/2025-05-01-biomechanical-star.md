@@ -9,5 +9,5 @@ venue: "IEEE International Workshop on Sport, Technology and Research (STAR)"
 venue_short: "IEEE STAR"
 paperurl: 'https://ieeexplore.ieee.org/document/11264777/'
 dataseturl: 'https://github.com/Bikudebug/Javelin_Throw_Dataset'
-gif: '/images/javelin-throw.gif'
+thumb: '/images/javelin-throw.gif'
 ---
