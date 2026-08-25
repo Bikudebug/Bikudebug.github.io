@@ -240,6 +240,199 @@ def save(img, name):
 
 
 # --------------------------------------------------------------------------- #
+# 3D mesh body - used only by the two Apollo Sports dashboard thumbnails
+#
+# Both of those pipelines lift a single video to a body mesh, so their figures
+# are drawn as shaded volumes under a wire grid instead of as stick skeletons.
+# They still take the same pose dicts as skeleton(): the shoulder and hip
+# corners of the trunk are derived from the neck-pelvis axis, so nothing has to
+# be re-authored to switch a figure between the two styles.
+# --------------------------------------------------------------------------- #
+
+# Half-widths across the body at each joint. These are given on the *height*
+# scale, like the head radius in skeleton(), and converted through bh - a cell
+# is much narrower than it is tall, so widths taken off bw would give a fat body
+# in the wide layouts and a snake in the phase grids. The numbers are ordinary
+# human proportions: shoulders a quarter of standing height, an upper arm a
+# twelfth of it.
+MESH_R = dict(neck=13.0, pelvis=10.5, shoulder=4.2, elbow=3.4, wrist=2.6,
+              hip=5.0, knee=4.0, ankle=2.6, foot=2.2)
+
+# How far out along the shoulder / hip line each limb hangs from the spine.
+# Both are set so that the joint plus the limb's own radius still falls inside
+# the trunk: a cap that pokes out past the silhouette has no wire on it, and
+# reads as a bare lump stuck to the shoulder on any pose whose arm crosses the
+# body instead of leaving it.
+MESH_ATTACH = dict(shoulder=8.5, hip=5.2)
+
+
+def _pale(colour, t):
+    """A fill for a volume: t=0 is the page background, t=1 the wire colour."""
+    return lerp(BG, colour, t)
+
+
+def mesh_limb(d, p0, p1, r0, r1, fill, wire, lw, rings=2):
+    """One tapered segment - a filled volume, rounded ends, rings across it.
+
+    The rings bow toward the far end rather than being drawn straight across.
+    Straight cross-lines read as a ladder; a bowed one reads as a band round
+    something round, which is the whole point of drawing a mesh and not a bone.
+    """
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    length = math.hypot(dx, dy) or 1
+    ux, uy = dx / length, dy / length
+    nx, ny = -uy, ux
+
+    edge_a = [(p0[0] + nx * r0, p0[1] + ny * r0), (p1[0] + nx * r1, p1[1] + ny * r1)]
+    edge_b = [(p0[0] - nx * r0, p0[1] - ny * r0), (p1[0] - nx * r1, p1[1] - ny * r1)]
+    d.polygon(edge_a + edge_b[::-1], fill=fill)
+    # rounded ends, so two consecutive segments meet without a notch at the joint
+    for (cx, cy), r in ((p0, r0), (p1, r1)):
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill)
+
+    thin = max(1, int(lw * 0.6))
+    d.line(edge_a, fill=wire, width=lw)
+    d.line(edge_b, fill=wire, width=lw)
+    for i in range(1, rings + 1):
+        t = i / (rings + 1)
+        cx, cy = p0[0] + dx * t, p0[1] + dy * t
+        r = r0 + (r1 - r0) * t
+        d.line([(cx + nx * r, cy + ny * r),
+                (cx + ux * r * 0.6, cy + uy * r * 0.6),
+                (cx - nx * r, cy - ny * r)], fill=wire, width=thin, joint="curve")
+
+
+def mesh_trunk(d, neck, pelvis, r_top, r_bot, fill, wire, lw, rows=3, cols=3):
+    """The torso as a quad from the shoulder line to the hip line, gridded."""
+    dx, dy = pelvis[0] - neck[0], pelvis[1] - neck[1]
+    length = math.hypot(dx, dy) or 1
+    ux, uy = dx / length, dy / length
+    nx, ny = -uy, ux
+
+    sl = (neck[0] + nx * r_top, neck[1] + ny * r_top)
+    sr = (neck[0] - nx * r_top, neck[1] - ny * r_top)
+    hl = (pelvis[0] + nx * r_bot, pelvis[1] + ny * r_bot)
+    hr = (pelvis[0] - nx * r_bot, pelvis[1] - ny * r_bot)
+
+    def P(u, v):
+        top = (sl[0] + (sr[0] - sl[0]) * u, sl[1] + (sr[1] - sl[1]) * u)
+        bot = (hl[0] + (hr[0] - hl[0]) * u, hl[1] + (hr[1] - hl[1]) * u)
+        return (top[0] + (bot[0] - top[0]) * v, top[1] + (bot[1] - top[1]) * v)
+
+    d.polygon([sl, sr, hr, hl], fill=fill)
+    thin = max(1, int(lw * 0.6))
+    for i in range(1, rows):
+        v = i / rows
+        mid = P(0.5, v)
+        d.line([P(0, v), (mid[0] + ux * r_top * 0.45, mid[1] + uy * r_top * 0.45),
+                P(1, v)], fill=wire, width=thin, joint="curve")
+    for i in range(1, cols):
+        u = i / cols
+        d.line([P(u, 0), P(u, 1)], fill=wire, width=thin)
+    d.line([sl, sr], fill=wire, width=lw)
+    d.line([hl, hr], fill=wire, width=lw)
+    d.line([sl, hl], fill=wire, width=lw)
+    d.line([sr, hr], fill=wire, width=lw)
+
+
+def mesh_head(d, centre, r, fill, wire, lw):
+    """A head as a small sphere: two wire circles inside the silhouette."""
+    cx, cy = centre
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=fill, outline=wire, width=lw)
+    # Below roughly 13 canvas px the two inner circles stop reading as latitude
+    # and longitude and just fill the head in, so they are dropped instead.
+    if r > 6.5 * S:
+        thin = max(1, int(lw * 0.6))
+        d.ellipse([cx - r * 0.44, cy - r, cx + r * 0.44, cy + r],
+                  outline=wire, width=thin)
+        d.ellipse([cx - r, cy - r * 0.36, cx + r, cy + r * 0.36],
+                  outline=wire, width=thin)
+
+
+def mesh_figure(d, pose, ox, oy, bw, bh, colour, scale=1.0, head_r=8.0,
+                facing=1, shadow_at=None):
+    """Draw a pose as a shaded body mesh. Returns the local->canvas mapper.
+
+    The trail side is drawn first in a darker fill, then the trunk over it, then
+    the lead side: opaque fills do the occlusion, which is what makes the body
+    read as one solid volume rather than as a wireframe of everything at once.
+    """
+    def pt(joint):
+        x, y = pose[joint]
+        return (ox + x / LOCAL_W * bw, oy + y / LOCAL_H * bh)
+
+    def r(key):
+        return MESH_R[key] / LOCAL_H * bh * scale
+
+    lw = max(2, int(1.8 * S))
+    neck, pelvis = pt("neck"), pt("pelvis")
+    tdx, tdy = pelvis[0] - neck[0], pelvis[1] - neck[1]
+    tl = math.hypot(tdx, tdy) or 1
+    tnx, tny = -tdy / tl, tdx / tl  # points to screen left on an upright figure
+
+    def attach(base, key, side):
+        w = MESH_ATTACH[key] / LOCAL_H * bh * scale * (1 if side == "l" else -1)
+        # Shoulders are tucked a little way down the spine. Level with the
+        # shoulder line, the rounded cap of the upper arm stands above it and
+        # reads as a shoulder pad rather than as a deltoid.
+        along = 0.12 * tl if key == "shoulder" else 0.0
+        return (base[0] + tnx * w + tdx / tl * along,
+                base[1] + tny * w + tdy / tl * along)
+
+    if shadow_at is not None:
+        ax = (pt("ankle_l")[0] + pt("ankle_r")[0]) / 2
+        sx, sy = bw * 0.30, 4.5 * S
+        d.ellipse([ax - sx, shadow_at - sy, ax + sx, shadow_at + sy],
+                  fill=lerp(BG, GROUND, 0.75))
+
+    def side_limbs(side, fill):
+        sh = attach(neck, "shoulder", side)
+        hip = attach(pelvis, "hip", side)
+        mesh_limb(d, sh, pt("elbow_" + side), r("shoulder"), r("elbow"),
+                  fill, colour, lw)
+        mesh_limb(d, pt("elbow_" + side), pt("wrist_" + side), r("elbow"),
+                  r("wrist"), fill, colour, lw, rings=1)
+        mesh_limb(d, hip, pt("knee_" + side), r("hip"), r("knee"), fill, colour, lw)
+        ankle = pt("ankle_" + side)
+        mesh_limb(d, pt("knee_" + side), ankle, r("knee"), r("ankle"),
+                  fill, colour, lw)
+        mesh_limb(d, ankle, (ankle[0] + facing * r("ankle") * 2.4, ankle[1]),
+                  r("ankle"), r("foot"), fill, colour, lw, rings=0)
+
+    # Three tones, darkest at the back. The near side is deliberately a shade
+    # darker than the trunk as well: a golf finish or a forehand swings the near
+    # arm right across the chest, and drawn in the trunk's own tone it merges
+    # into it and takes the trunk's outline with it.
+    side_limbs("l", _pale(colour, 0.44))
+    mesh_trunk(d, neck, pelvis, r("neck"), r("pelvis"),
+               _pale(colour, 0.26), colour, lw)
+    mesh_head(d, pt("head"), head_r / LOCAL_H * bh, _pale(colour, 0.20),
+              colour, lw)
+    side_limbs("r", _pale(colour, 0.35))
+    return pt
+
+
+def orbit(d, centre, rx, ry, colour, width):
+    """A ring under the figure with an arrow head running down its right side.
+
+    Stands in for the dashboard's orbit control: a mesh you can turn is the one
+    claim a still frame of a 3D reconstruction cannot make on its own. Drawn as
+    a continuous outline rather than a dotted one - dotted, it dissolves into a
+    few grey specks by the time the thumbnail is down to 190px.
+    """
+    cx, cy = centre
+    d.ellipse([cx - rx, cy - ry, cx + rx, cy + ry],
+              outline=colour, width=max(2, int(width)))
+    # The head goes at the right extreme, where the tangent to a ground-plane
+    # ellipse is vertical, so pointing it straight down runs along the ring. It
+    # is kept off the near arc: there the ring passes under the feet, and an
+    # arrow head landing on them reads as a dropped object.
+    hx, hy = cx + rx, cy
+    d.polygon([(hx, hy + 10 * S), (hx - 5.5 * S, hy - 2 * S),
+               (hx + 5.5 * S, hy - 2 * S)], fill=colour)
+
+
+# --------------------------------------------------------------------------- #
 # 1. Throwing4 - four phases of a throw
 # --------------------------------------------------------------------------- #
 
@@ -672,41 +865,44 @@ def umpire():
 
 
 # --------------------------------------------------------------------------- #
-# 10. Golf - four keyframes of a swing over the eight-phase segmentation
+# 10. Golf - three mesh keyframes over the eight-phase segmentation
 # --------------------------------------------------------------------------- #
 
-# address, top of backswing, impact, finish. Face-on view, target to the right.
-# A golf grip is both hands on one shaft, so the two wrists sit almost on top of
-# each other and the club comes out of the right one. The hands are kept out to
-# the side of the body rather than over it: drawn down the centre line, the two
-# arms and the torso close into a diamond that reads as a shape, not as arms.
+# Address, top of the backswing, finish. Face-on view, target to the right.
+#
+# Three frames, not four: these are bodies rather than sticks, and a fourth cell
+# takes each one down to about 60px on the rendered thumbnail, where the mesh
+# collapses into a blot. The three chosen are the three that stay distinct at
+# that size - address and impact differ mostly in the hips and the trail heel,
+# which is exactly the detail that disappears first.
+#
+# A golf grip is both hands on one shaft, so the wrists nearly coincide and the
+# club comes out of the trail hand. The hands stay well outside the trunk: with
+# a solid body, an arm drawn over the chest is simply swallowed by it.
 GOLF_POSES = [
-    # address - square and level, club soled behind the ball
-    dict(head=(48, 20), neck=(48, 34), pelvis=(48, 70),
-         elbow_r=(58, 50), wrist_r=(64, 64), elbow_l=(44, 52), wrist_l=(60, 62),
-         knee_r=(58, 96), ankle_r=(62, 126), knee_l=(38, 96), ankle_l=(34, 126)),
-    # top of the backswing - hands above the trail shoulder
-    dict(head=(48, 20), neck=(48, 32), pelvis=(52, 70),
-         elbow_r=(66, 32), wrist_r=(74, 16), elbow_l=(60, 36), wrist_l=(70, 18),
-         knee_r=(62, 96), ankle_r=(64, 126), knee_l=(38, 96), ankle_l=(36, 126)),
-    # impact - hips driven at the target, lead leg posted straight, trail heel up
-    dict(head=(46, 20), neck=(48, 34), pelvis=(54, 68),
-         elbow_r=(60, 48), wrist_r=(66, 62), elbow_l=(46, 50), wrist_l=(62, 60),
-         knee_r=(66, 98), ankle_r=(70, 126), knee_l=(42, 94), ankle_l=(34, 120)),
-    # finish - fully through, weight on the lead leg, trail foot up on its toe
-    dict(head=(52, 20), neck=(52, 34), pelvis=(50, 70),
-         elbow_r=(38, 30), wrist_r=(26, 20), elbow_l=(40, 32), wrist_l=(28, 22),
-         knee_r=(56, 96), ankle_r=(58, 126), knee_l=(46, 96), ankle_l=(42, 120)),
+    # address - square and level, hands low and forward, club soled at the ball
+    dict(head=(46, 20), neck=(46, 36), pelvis=(48, 72),
+         elbow_r=(64, 54), wrist_r=(72, 74), elbow_l=(56, 56), wrist_l=(70, 72),
+         knee_r=(58, 98), ankle_r=(60, 126), knee_l=(36, 98), ankle_l=(34, 126)),
+    # top of the backswing - hands high above the trail shoulder, torso coiled
+    dict(head=(46, 22), neck=(46, 38), pelvis=(50, 72),
+         elbow_r=(68, 40), wrist_r=(78, 22), elbow_l=(58, 48), wrist_l=(76, 26),
+         knee_r=(60, 98), ankle_r=(62, 126), knee_l=(36, 98), ankle_l=(34, 126)),
+    # finish - turned through onto the lead leg, trail foot up on its toe. The
+    # two arms fold into a V at the hands; drawn level they merge with the
+    # shoulder line into one horizontal slab across the top of the body.
+    dict(head=(52, 20), neck=(50, 36), pelvis=(48, 72),
+         elbow_r=(34, 30), wrist_r=(20, 24), elbow_l=(42, 46), wrist_l=(24, 30),
+         knee_r=(58, 96), ankle_r=(60, 120), knee_l=(42, 98), ankle_l=(38, 126)),
 ]
 
 # Where the club head sits in each pose, in the same local box as the joints.
-# Frames 0 and 2 put it on the ball, out to the right and well clear of the
-# legs; 1 and 3 swing it up past the shoulder, above the head circle rather
-# than through it.
-GOLF_SHAFT = [(82, 128), (38, 4), (80, 127), (60, 6)]
+# Frame 0 puts it on the ball, out to the right and clear of the legs; 1 and 2
+# swing it up past the shoulder, above the head rather than through it.
+GOLF_SHAFT = [(88, 128), (44, 6), (58, 8)]
 
 # On the ground at address and at the top, gone once the ball has been struck.
-BALL_AT = (88, 126)
+BALL_AT = (92, 127)
 
 
 def golf():
@@ -717,14 +913,19 @@ def golf():
     box_h = baseline - pad_top
 
     for i, pose in enumerate(GOLF_POSES):
-        colour = lerp(FADE, INK, i / (len(GOLF_POSES) - 1))
+        # The fade starts a third of the way along rather than at FADE itself: a
+        # mesh body is mostly pale fill, so a figure outlined in FADE all but
+        # disappears once the thumbnail is scaled down to 190px.
+        t = i / (len(GOLF_POSES) - 1)
+        colour = lerp(FADE, INK, 0.35 + 0.65 * t)
         ox = pad_x + cell * i + cell * 0.08
         bw = cell * 0.84
 
         def local(lx, ly, ox=ox, bw=bw):
             return (ox + lx / LOCAL_W * bw, pad_top + ly / LOCAL_H * box_h)
 
-        pt = skeleton(d, pose, ox, pad_top, bw, box_h, colour)
+        pt = mesh_figure(d, pose, ox, pad_top, bw, box_h, colour,
+                         shadow_at=baseline)
 
         # shaft out of the hands, with the head as a short thick stroke square
         # to it - that reads as a club head whichever way the shaft points.
@@ -737,7 +938,7 @@ def golf():
                 (tip[0] + nx * 4 * S, tip[1] + ny * 4 * S)],
                fill=colour, width=max(4, int(5 * S)))
 
-        if i < 3:
+        if i < 2:
             bx, by = local(*BALL_AT)
             br = 4 * S
             d.ellipse([bx - br, by - br, bx + br, by + br], fill=colour)
@@ -748,7 +949,7 @@ def golf():
                 for i in range(n)]
     timeline(d, pad_x, W - pad_x, ty, th, segments, ticks=False)
 
-    chrome(d, "Golf Swing", "eight-phase swing segmentation", baseline,
+    chrome(d, "Golf Swing", "3D mesh, eight-phase segmentation", baseline,
            caption_y=ty + th + 12 * S)
     return img
 
@@ -757,11 +958,13 @@ def golf():
 # 11. Tennis - a stroke at contact, and the strokes found in the rally
 # --------------------------------------------------------------------------- #
 
-# forehand at contact: the racket arm extended out in front, weight forward
-TENNIS_POSE = dict(head=(46, 24), neck=(48, 38), pelvis=(50, 74),
-                   elbow_r=(64, 46), wrist_r=(78, 38), elbow_l=(34, 50),
-                   wrist_l=(26, 62), knee_r=(64, 98), ankle_r=(72, 126),
-                   knee_l=(36, 98), ankle_l=(28, 126))
+# Forehand at contact: racket arm extended out in front, weight forward, stance
+# wide. Both arms are thrown clear of the trunk - the body is a solid volume
+# here, so anything drawn across the chest is occluded by it.
+TENNIS_POSE = dict(head=(44, 22), neck=(44, 38), pelvis=(46, 74),
+                   elbow_r=(64, 46), wrist_r=(80, 36), elbow_l=(28, 50),
+                   wrist_l=(18, 62), knee_r=(62, 98), ankle_r=(70, 126),
+                   knee_l=(32, 98), ankle_l=(24, 126))
 
 
 def racket(d, hand, angle_deg, reach, colour):
@@ -815,11 +1018,22 @@ def tennis():
     pad_top = 42 * S
     baseline = 170 * S
     box_h = baseline - pad_top
+    # 97 local units wide against 132 tall over the same box makes one unit of x
+    # the same number of pixels as one unit of y, so the body is not stretched.
+    bw = 97 * S
 
     d.line([(20 * S, baseline), (W - 20 * S, baseline)],
            fill=GROUND, width=max(2, int(1.5 * S)))
 
-    pt = skeleton(d, TENNIS_POSE, 30 * S, pad_top, 150 * S, box_h, INK)
+    # the mesh viewer's orbit ring, drawn as a ground-plane circle in
+    # perspective: centred on the baseline, so its near arc dips below it
+    # ry is held to 14 so the near arc clears the timeline track below, which is
+    # drawn afterwards and would otherwise slice the ring in half
+    orbit(d, (30 * S + bw * 0.46, baseline - 1 * S), bw * 0.54, 14 * S,
+          lerp(GROUND, MUTED, 0.45), 2 * S)
+
+    pt = mesh_figure(d, TENNIS_POSE, 30 * S, pad_top, bw, box_h, INK,
+                     shadow_at=baseline)
     bed = racket(d, pt("wrist_r"), 22, 42 * S, INK)
 
     net(d, 268 * S, baseline, 32 * S, 62 * S, MUTED)
@@ -839,8 +1053,8 @@ def tennis():
              ((0.04, 0.22, INK), (0.34, 0.52, mid), (0.66, 0.90, FADE)),
              ticks=False)
 
-    chrome(d, "Tennis Strokes", "stroke segmentation from tracked pose", baseline,
-           caption_y=ty + th + 12 * S)
+    chrome(d, "Tennis Strokes", "orbitable 3D mesh, stroke phase metrics",
+           baseline, caption_y=ty + th + 12 * S)
     return img
 
 

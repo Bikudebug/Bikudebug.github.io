@@ -1,19 +1,21 @@
 ---
-title: "Tennis Stroke Recognition and Motion Analytics Dashboard"
+title: "Apollo Tennis Dashboard: Monocular Stroke Biomechanics and 3D Mesh"
 collection: projects
 org: "Internship, Apollo Sports"
-period: "Jun 2026 – Aug 2026"
+period: "Jun 2026 – Present"
+status: "Ongoing"
 date: 2026-06-01
 thumb: '/images/tennis-strokes.png'
-summary: "Built a single tennis-video pipeline that selects and tracks one player, extracts 2D pose frame by frame, classifies pose windows as forehand, backhand, serve or neutral, groups the frame predictions into stroke segments, and derives motion features and side-by-side explanation videos for qualitative review."
+summary: "Built a single-camera tennis pipeline that reads 133 body keypoints per frame behind a compulsory kinematic-plausibility filter, finds and classifies each stroke, splits the serve into four phases, and reports twelve biomechanical measurements in metres, degrees and milliseconds by scaling pixels with the player's real height — alongside a 3D body mesh the coach can orbit in the browser."
 highlights:
-  - "Merged two earlier codebases into one workflow covering both supervised training and evaluation on annotated matches and end-to-end inference on unseen video, with racket tracking and rendered prediction overlays."
-  - "Benchmarked four classifiers (random forest, linear SVM, logistic regression, LSTM) on held-out matches; the selected random forest reached <strong>97.2% frame accuracy</strong>, with the accompanying report documenting the class-imbalance limits of the current split."
+  - "Shipped a per-player dashboard — synchronised video views, an orbitable 3D mesh, phase sheets, a radar chart and a 0–100 serve score — published as a static bundle behind CloudFront with Origin Access Control, so the storage bucket itself stays private."
+  - "Stroke detection reaches <strong>88.2%</strong> against hand-labelled frames; the mesh payload was cut to <strong>2.1–2.9 MB per serve</strong> as gzipped int16 temporal deltas, so the 3D viewer loads over a phone connection."
+  - "Established what one camera cannot recover: four arm configurations fit the same frame to within a pixel, so five rotation metrics are declared unavailable and three radar spokes are left visibly empty rather than filled with a number the system cannot defend."
 tags:
-  - Player Tracking
+  - Monocular Biomechanics
   - Pose Estimation
-  - Stroke Classification
-  - Random Forest
-  - LSTM
-codeurl: 'https://github.com/Bikudebug/tennis_action_recognisation'
+  - Stroke Segmentation
+  - 3D Mesh Reconstruction
+  - Sports Dashboard
+  - AWS
 ---
