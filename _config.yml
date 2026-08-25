@@ -227,6 +227,10 @@ collections:
   publications:
     output: true
     permalink: /:collection/:path/
+  # No `output` - /projects/ renders the whole list, and a standalone page per
+  # project would only repeat the one paragraph already shown there.
+  projects:
+    output: false
   portfolio:
     output: true
     permalink: /:collection/:path/

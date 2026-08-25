@@ -1,0 +1,59 @@
+{% include base_path %}
+
+{%- comment -%}
+  Renders one entry in the list on /projects/.
+  Expects `post` to be a document from the `projects` collection.
+  Recognised front matter: org, period, status, summary, highlights, tags,
+  thumb, plus the link fields listed in work-links.html.
+
+  `summary` and `highlights` are emitted as-is, so inline HTML such as
+  <strong> works in them; they are not run through markdownify.
+{%- endcomment -%}
+
+{%- assign headline_url = post.codeurl | default: post.paperurl | default: post.arxivurl -%}
+
+<div class="proj-item">
+  {% if post.thumb %}
+    <div class="proj-thumb">
+      <img src="{{ post.thumb }}" alt="{{ post.title | strip_html | escape }}" loading="lazy">
+    </div>
+  {% endif %}
+
+  <div class="proj-body">
+    <h3 class="proj-title">
+      {% if headline_url %}
+        <a href="{{ headline_url }}">{{ post.title }}</a>
+      {% else %}
+        {{ post.title }}
+      {% endif %}
+    </h3>
+
+    <p class="proj-meta">
+      {% if post.org %}<span class="proj-org">{{ post.org }}</span>{% endif %}
+      {% if post.period %}<span class="proj-period">{{ post.period }}</span>{% endif %}
+      {% if post.status %}<span class="pub-badge">{{ post.status }}</span>{% endif %}
+    </p>
+
+    {% if post.summary %}
+      <p class="proj-summary">{{ post.summary }}</p>
+    {% endif %}
+
+    {% if post.highlights %}
+      <ul class="proj-highlights">
+        {% for item in post.highlights %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if post.tags %}
+      <p class="proj-tags">
+        {%- for tag in post.tags -%}
+          <span class="proj-tag">{{ tag }}</span>
+        {%- endfor -%}
+      </p>
+    {% endif %}
+
+    {% include work-links.html %}
+  </div>
+</div>

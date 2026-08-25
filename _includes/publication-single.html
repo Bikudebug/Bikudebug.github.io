@@ -3,8 +3,8 @@
 {%- comment -%}
   Renders one publication in the list on /publications/.
   Expects `post` to be a document from the `publications` collection.
-  Recognised front matter: authors, venue, venue_short, status, paperurl,
-  arxivurl, codeurl, dataseturl, slidesurl, bibtexurl, thumb.
+  Recognised front matter: authors, venue, venue_short, status, thumb, plus the
+  link fields listed in work-links.html.
   `gif` is still honoured as the old name for `thumb`.
 {%- endcomment -%}
 
@@ -53,30 +53,6 @@
       {% endif %}
     </p>
 
-    {% capture pub_links %}
-      {%- if post.paperurl -%}
-        <a class="pub-link" href="{{ post.paperurl }}"><i class="fas fa-file-lines" aria-hidden="true"></i>Paper</a>
-      {%- endif -%}
-      {%- if post.arxivurl -%}
-        <a class="pub-link" href="{{ post.arxivurl }}"><i class="fas fa-book-open" aria-hidden="true"></i>arXiv</a>
-      {%- endif -%}
-      {%- if post.codeurl -%}
-        <a class="pub-link" href="{{ post.codeurl }}"><i class="fab fa-github" aria-hidden="true"></i>Code</a>
-      {%- endif -%}
-      {%- if post.dataseturl -%}
-        <a class="pub-link" href="{{ post.dataseturl }}"><i class="fas fa-database" aria-hidden="true"></i>Dataset</a>
-      {%- endif -%}
-      {%- if post.slidesurl -%}
-        <a class="pub-link" href="{{ post.slidesurl }}"><i class="fas fa-display" aria-hidden="true"></i>Slides</a>
-      {%- endif -%}
-      {%- if post.bibtexurl -%}
-        <a class="pub-link" href="{{ post.bibtexurl }}"><i class="fas fa-quote-right" aria-hidden="true"></i>BibTeX</a>
-      {%- endif -%}
-    {% endcapture %}
-
-    {% assign pub_links = pub_links | strip %}
-    {% if pub_links != "" %}
-      <p class="pub-links">{{ pub_links }}</p>
-    {% endif %}
+    {% include work-links.html %}
   </div>
 </div>

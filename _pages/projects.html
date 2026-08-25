@@ -1,0 +1,20 @@
+---
+layout: archive
+title: "Projects"
+permalink: /projects/
+author_profile: true
+---
+
+{% include base_path %}
+
+<p class="proj-intro">
+  Research and applied projects, most recent first. Code, datasets and papers
+  are linked wherever they are public.
+</p>
+
+{% assign all_projects = site.projects | sort: 'date' | reverse %}
+<div class="proj-list">
+  {% for post in all_projects %}
+    {% include project-single.html %}
+  {% endfor %}
+</div>

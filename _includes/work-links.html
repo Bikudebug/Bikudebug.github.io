@@ -1,0 +1,32 @@
+{%- comment -%}
+  The row of link buttons shared by /publications/ and /projects/.
+  Expects `post` to be in scope; emits nothing when it carries no links.
+  Recognised front matter: paperurl, arxivurl, codeurl, dataseturl, slidesurl,
+  bibtexurl.
+{%- endcomment -%}
+
+{%- capture work_links -%}
+  {%- if post.paperurl -%}
+    <a class="work-link" href="{{ post.paperurl }}"><i class="fas fa-file-lines" aria-hidden="true"></i>Paper</a>
+  {%- endif -%}
+  {%- if post.arxivurl -%}
+    <a class="work-link" href="{{ post.arxivurl }}"><i class="fas fa-book-open" aria-hidden="true"></i>arXiv</a>
+  {%- endif -%}
+  {%- if post.codeurl -%}
+    <a class="work-link" href="{{ post.codeurl }}"><i class="fab fa-github" aria-hidden="true"></i>Code</a>
+  {%- endif -%}
+  {%- if post.dataseturl -%}
+    <a class="work-link" href="{{ post.dataseturl }}"><i class="fas fa-database" aria-hidden="true"></i>Dataset</a>
+  {%- endif -%}
+  {%- if post.slidesurl -%}
+    <a class="work-link" href="{{ post.slidesurl }}"><i class="fas fa-display" aria-hidden="true"></i>Slides</a>
+  {%- endif -%}
+  {%- if post.bibtexurl -%}
+    <a class="work-link" href="{{ post.bibtexurl }}"><i class="fas fa-quote-right" aria-hidden="true"></i>BibTeX</a>
+  {%- endif -%}
+{%- endcapture -%}
+
+{%- assign work_links = work_links | strip -%}
+{%- if work_links != "" -%}
+  <p class="work-links">{{ work_links }}</p>
+{%- endif -%}

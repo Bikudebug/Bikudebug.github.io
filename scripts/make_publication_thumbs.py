@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""Generate the thumbnails for every entry on /publications/.
+"""Generate the thumbnails used on /publications/ and /projects/.
 
-The originals were sports GIFs, several of them enormous (diving_star.gif was
-10.4 MB, BackFlop_diving.gif 4.9 MB) for a slot the page renders at 190x120.
-Each is replaced by a small schematic of what the paper actually does, drawn in
-one shared style so the list reads as a set.
+The publication originals were sports GIFs, several of them enormous
+(diving_star.gif was 10.4 MB, BackFlop_diving.gif 4.9 MB) for a slot the page
+renders at 190x120. Each is a small schematic of what the work actually does,
+drawn in one shared style so both lists read as a set. Projects that are the
+same work as a paper reuse that paper's thumbnail.
 
 Run from the repository root:
     python scripts/make_publication_thumbs.py
 """
 
 import math
+import random
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -27,6 +29,7 @@ FADE = (152, 187, 230)
 GROUND = (188, 198, 208)
 LABEL = (31, 35, 40)
 MUTED = (122, 132, 142)
+DANGER = (207, 34, 46)    # the one non-blue accent, for the flagged defect
 
 # Joint coordinates below are given in a LOCAL_W x LOCAL_H box, y downwards.
 # The lowest ankle sits near y=125, so a box height of 132 puts the feet on the
@@ -129,6 +132,41 @@ def skeleton(d, pose, ox, oy, bw, bh, colour, lw=None, head_r=6.5, joint_r=None)
             jx, jy = pt(joint)
             d.ellipse([jx - jr, jy - jr, jx + jr, jy + jr], fill=colour)
     return pt
+
+
+def dotted_curve(d, p0, p1, lift, colour, width, dots=22):
+    """A dotted quadratic arc from p0 to p1, `lift` pixels above the chord."""
+    cx = (p0[0] + p1[0]) / 2
+    cy = (p0[1] + p1[1]) / 2 - lift
+    r = max(1, int(width))
+    for i in range(dots + 1):
+        t = i / dots
+        x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * cx + t ** 2 * p1[0]
+        y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * cy + t ** 2 * p1[1]
+        if i % 2 == 0:
+            d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
+
+
+def arrow(d, x0, x1, y, colour):
+    d.line([(x0, y), (x1, y)], fill=colour, width=max(2, int(2 * S)))
+    d.polygon([(x1 + 7 * S, y), (x1, y - 5 * S), (x1, y + 5 * S)], fill=colour)
+
+
+def timeline(d, x0, x1, y, h, segments, ticks=True):
+    """An outlined track with filled segments given as (start, end, colour)."""
+    d.rounded_rectangle([x0, y, x1, y + h], radius=5 * S,
+                        outline=GROUND, width=max(2, int(1.6 * S)))
+    span = x1 - x0
+    for start, end, colour in segments:
+        d.rounded_rectangle([x0 + span * start, y + 3 * S,
+                             x0 + span * end, y + h - 3 * S],
+                            radius=3 * S, fill=colour)
+    if ticks:
+        for start, end, _ in segments:
+            for frac in (start, end):
+                x = x0 + span * frac
+                dashed(d, (x, y + h + 4 * S), (x, y + h + 30 * S), GROUND,
+                       max(1, int(1.2 * S)), dash=4 * S, gap=4 * S)
 
 
 def implement(d, anchor, angle_deg, back, fwd, colour, width, bounds=None):
@@ -352,25 +390,11 @@ def utal_gnn():
     # --- arrow across to the timeline
     ax0, ax1 = ox + bw + 8 * S, ox + bw + 34 * S
     ay = pad_top + box_h * 0.5
-    d.line([(ax0, ay), (ax1, ay)], fill=MUTED, width=max(2, int(2 * S)))
-    d.polygon([(ax1 + 7 * S, ay), (ax1, ay - 5 * S), (ax1, ay + 5 * S)], fill=MUTED)
+    arrow(d, ax0, ax1, ay, MUTED)
 
     # --- right: a timeline with two localized action segments
-    tx0, tx1 = ax1 + 16 * S, W - 20 * S
-    ty = pad_top + box_h * 0.34
-    th = 26 * S
-    d.rounded_rectangle([tx0, ty, tx1, ty + th], radius=5 * S,
-                        outline=GROUND, width=max(2, int(1.6 * S)))
-    span = tx1 - tx0
-    for start, end, colour in ((0.08, 0.36, FADE), (0.52, 0.90, INK)):
-        d.rounded_rectangle([tx0 + span * start, ty + 3 * S,
-                             tx0 + span * end, ty + th - 3 * S],
-                            radius=3 * S, fill=colour)
-    # dashed boundary markers dropping below the bar
-    for frac in (0.08, 0.36, 0.52, 0.90):
-        x = tx0 + span * frac
-        dashed(d, (x, ty + th + 4 * S), (x, ty + th + 34 * S), GROUND,
-               max(1, int(1.2 * S)), dash=4 * S, gap=4 * S)
+    timeline(d, ax1 + 16 * S, W - 20 * S, pad_top + box_h * 0.34, 26 * S,
+             ((0.08, 0.36, FADE), (0.52, 0.90, INK)))
 
     chrome(d, "UTAL-GNN", "graph embeddings to action boundaries", baseline)
     return img
@@ -428,15 +452,9 @@ def boxingvi():
     # annotation track: three labelled action segments
     ty = baseline + 14 * S
     th = 22 * S
-    tx0, tx1 = 20 * S, W - 20 * S
-    span = tx1 - tx0
-    d.rounded_rectangle([tx0, ty, tx1, ty + th], radius=5 * S,
-                        outline=GROUND, width=max(2, int(1.6 * S)))
-    for start, end, colour in ((0.02, 0.30, INK), (0.36, 0.58, FADE),
-                               (0.64, 0.98, INK)):
-        d.rounded_rectangle([tx0 + span * start, ty + 3 * S,
-                             tx0 + span * end, ty + th - 3 * S],
-                            radius=3 * S, fill=colour)
+    timeline(d, 20 * S, W - 20 * S, ty, th,
+             ((0.02, 0.30, INK), (0.36, 0.58, FADE), (0.64, 0.98, INK)),
+             ticks=False)
 
     chrome(d, "BoxingVI", "multi-modal action benchmark", baseline,
            caption_y=ty + th + 12 * S)
@@ -444,14 +462,228 @@ def boxingvi():
 
 
 # --------------------------------------------------------------------------- #
+# 6. Cricket - bowler delivering to a batter, with a phase track
+# --------------------------------------------------------------------------- #
+
+BOWLER = dict(head=(46, 26), neck=(46, 40), pelvis=(48, 74),
+              elbow_r=(56, 20), wrist_r=(62, 6), elbow_l=(34, 52),
+              wrist_l=(24, 64), knee_r=(66, 96), ankle_r=(78, 126),
+              knee_l=(32, 98), ankle_l=(22, 126))
+
+# Hands high and behind, so the bat can be drawn as a clear backlift instead of
+# a stroke that disappears into the legs.
+BATTER = dict(head=(52, 26), neck=(52, 40), pelvis=(54, 74),
+              elbow_r=(64, 48), wrist_r=(70, 42), elbow_l=(62, 54),
+              wrist_l=(68, 48), knee_r=(44, 98), ankle_r=(38, 126),
+              knee_l=(64, 98), ankle_l=(70, 126))
+
+
+def stumps(d, x, baseline, h, colour):
+    """Three stumps and two bails - the cue that says cricket."""
+    lw = max(2, int(2.2 * S))
+    gap = 6 * S
+    for i in range(3):
+        sx = x + i * gap
+        d.line([(sx, baseline), (sx, baseline - h)], fill=colour, width=lw)
+    for i in range(2):
+        d.line([(x + i * gap, baseline - h), (x + (i + 1) * gap, baseline - h)],
+               fill=colour, width=max(1, int(1.6 * S)))
+
+
+def cricket():
+    img, d = canvas()
+    pad_top = 42 * S
+    baseline = 170 * S
+    box_h = baseline - pad_top
+    bw = 150 * S
+
+    d.line([(20 * S, baseline), (W - 20 * S, baseline)],
+           fill=GROUND, width=max(2, int(1.5 * S)))
+
+    bowl_pt = skeleton(d, BOWLER, 30 * S, pad_top, bw, box_h, INK)
+    bat_pt = skeleton(d, BATTER, 206 * S, pad_top, bw, box_h, FADE)
+
+    # ball in the bowler's raised hand, and its dotted path to the batter
+    ball = bowl_pt("wrist_r")
+    br = 5 * S
+    d.ellipse([ball[0] - br, ball[1] - br, ball[0] + br, ball[1] + br], fill=INK)
+    pitch_at = (bat_pt("ankle_r")[0] - 12 * S, baseline - 6 * S)
+    dotted_curve(d, ball, pitch_at, 20 * S, MUTED, 1.8 * S)
+
+    # bat: a thin handle out of the hands into a thicker blade, raised behind
+    hands = bat_pt("wrist_r")
+    toe = (hands[0] + 26 * S, hands[1] - 30 * S)
+    mid = ((hands[0] + toe[0]) / 2, (hands[1] + toe[1]) / 2)
+    d.line([hands, mid], fill=FADE, width=max(2, int(2.4 * S)))
+    d.line([mid, toe], fill=FADE, width=max(4, int(6 * S)))
+
+    stumps(d, 322 * S, baseline, 32 * S, MUTED)
+
+    ty, th = baseline + 14 * S, 22 * S
+    timeline(d, 20 * S, W - 20 * S, ty, th,
+             ((0.02, 0.24, FADE), (0.30, 0.62, INK), (0.68, 0.98, FADE)),
+             ticks=False)
+
+    chrome(d, "Cricket", "gameplay phase transitions", baseline,
+           caption_y=ty + th + 12 * S)
+    return img
+
+
+# --------------------------------------------------------------------------- #
+# 7. Defect analysis - a reference image against a sample, flaw ringed
+# --------------------------------------------------------------------------- #
+
+def device(d, x, y, w, h, colour):
+    """A stand-in for the device under inspection."""
+    lw = max(2, int(2 * S))
+    d.rounded_rectangle([x, y, x + w, y + h], radius=6 * S,
+                        outline=colour, width=lw)
+    for i in (0.32, 0.52):
+        d.line([(x + w * 0.16, y + h * i), (x + w * 0.84, y + h * i)],
+               fill=colour, width=max(1, int(1.6 * S)))
+    r = w * 0.09
+    cx, cy = x + w * 0.5, y + h * 0.76
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=colour, width=lw)
+
+
+def defect_analysis():
+    img, d = canvas()
+    fy, fh = 60 * S, 130 * S
+    fw = 130 * S
+    left_x, right_x = 24 * S, 216 * S
+
+    for x in (left_x, right_x):
+        d.rounded_rectangle([x, fy, x + fw, fy + fh], radius=8 * S,
+                            fill=(255, 255, 255), outline=GROUND,
+                            width=max(2, int(1.6 * S)))
+        device(d, x + fw * 0.22, fy + fh * 0.18, fw * 0.56, fh * 0.64, INK)
+
+    # the sample carries a scratch, ringed in the one non-blue colour on the site
+    sx, sy = right_x + fw * 0.60, fy + fh * 0.42
+    d.line([(sx - 9 * S, sy + 5 * S), (sx - 2 * S, sy - 4 * S),
+            (sx + 4 * S, sy + 4 * S), (sx + 10 * S, sy - 3 * S)],
+           fill=DANGER, width=max(2, int(2 * S)), joint="curve")
+    rr = 20 * S
+    d.ellipse([sx - rr, sy - rr, sx + rr, sy + rr], outline=DANGER,
+              width=max(2, int(2 * S)))
+
+    # divider between the pair
+    mid = (left_x + fw + right_x) / 2
+    dashed(d, (mid, fy), (mid, fy + fh), GROUND, max(1, int(1.4 * S)))
+    d.text((mid - 9 * S, fy + fh * 0.45), "vs", font=font(13 * S), fill=MUTED)
+
+    baseline = fy + fh + 16 * S
+    d.line([(24 * S, baseline), (W - 24 * S, baseline)], fill=GROUND,
+           width=max(2, int(1.5 * S)))
+    chrome(d, "Defect Analysis", "paired-image defect detection", baseline)
+    return img
+
+
+# --------------------------------------------------------------------------- #
+# 8. 3D motion retrieval - a query pose and its ranked matches
+# --------------------------------------------------------------------------- #
+
+QUERY_POSE = dict(head=(50, 22), neck=(50, 38), pelvis=(50, 74),
+                  elbow_r=(66, 44), wrist_r=(78, 30), elbow_l=(34, 48),
+                  wrist_l=(26, 64), knee_r=(64, 98), ankle_r=(70, 126),
+                  knee_l=(36, 98), ankle_l=(30, 126))
+
+# the retrieved neighbours: the same action, progressively looser matches
+MATCH_POSES = [
+    dict(head=(50, 24), neck=(50, 40), pelvis=(50, 74),
+         elbow_r=(66, 46), wrist_r=(76, 32), elbow_l=(34, 50), wrist_l=(28, 66),
+         knee_r=(62, 98), ankle_r=(68, 126), knee_l=(38, 98), ankle_l=(32, 126)),
+    dict(head=(48, 26), neck=(48, 42), pelvis=(50, 76),
+         elbow_r=(64, 50), wrist_r=(72, 36), elbow_l=(34, 54), wrist_l=(30, 70),
+         knee_r=(60, 100), ankle_r=(66, 126), knee_l=(40, 100), ankle_l=(34, 126)),
+    dict(head=(48, 28), neck=(48, 44), pelvis=(52, 76),
+         elbow_r=(62, 56), wrist_r=(70, 44), elbow_l=(36, 56), wrist_l=(32, 72),
+         knee_r=(58, 100), ankle_r=(64, 126), knee_l=(42, 100), ankle_l=(36, 126)),
+]
+
+
+def motion_retrieval():
+    img, d = canvas()
+    pad_top = 44 * S
+    baseline = H - 30 * S
+    box_h = baseline - pad_top
+
+    d.line([(20 * S, baseline), (W - 20 * S, baseline)],
+           fill=GROUND, width=max(2, int(1.5 * S)))
+
+    # query, at full size
+    skeleton(d, QUERY_POSE, 16 * S, pad_top, 108 * S, box_h, INK)
+
+    ax0 = 128 * S
+    arrow(d, ax0, ax0 + 26 * S, pad_top + box_h * 0.5, MUTED)
+
+    # ranked matches, shorter and lighter the further down the ranking they are
+    for i, pose in enumerate(MATCH_POSES):
+        colour = lerp(INK, FADE, (i + 1) / (len(MATCH_POSES) + 1))
+        scale = 1 - 0.06 * i
+        bh = box_h * scale
+        skeleton(d, pose, (184 + i * 66) * S, baseline - bh, 96 * S, bh, colour)
+
+    chrome(d, "3D Motion Retrieval", "query and ranked motion matches", baseline)
+    return img
+
+
+# --------------------------------------------------------------------------- #
+# 9. UMPIRE - deep clustering of embeddings into action segments
+# --------------------------------------------------------------------------- #
+
+def umpire():
+    img, d = canvas()
+    rng = random.Random(7)      # fixed seed: the scatter must be reproducible
+    mid = lerp(FADE, INK, 0.5)
+
+    # ph is bounded by the canvas: the panel, its rule and the caption all have
+    # to fit inside 480px, and a taller panel pushes the caption off the bottom.
+    px, py, pw, ph = 24 * S, 50 * S, 150 * S, 128 * S
+    d.rounded_rectangle([px, py, px + pw, py + ph], radius=8 * S,
+                        fill=(255, 255, 255), outline=GROUND,
+                        width=max(2, int(1.6 * S)))
+
+    clusters = ((0.28, 0.30, INK), (0.70, 0.34, mid), (0.46, 0.74, FADE))
+    r = 3.4 * S
+    for cx, cy, colour in clusters:
+        for _ in range(9):
+            x = px + (cx + rng.gauss(0, 0.075)) * pw
+            y = py + (cy + rng.gauss(0, 0.075)) * ph
+            d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
+    for nx, ny in ((0.10, 0.86), (0.88, 0.82), (0.14, 0.56)):  # DBSCAN noise
+        x, y = px + nx * pw, py + ny * ph
+        d.ellipse([x - r, y - r, x + r, y + r], outline=MUTED,
+                  width=max(1, int(1.4 * S)))
+
+    ay = py + ph * 0.5
+    arrow(d, px + pw + 10 * S, px + pw + 36 * S, ay, MUTED)
+
+    # each cluster becomes a labelled stretch of the timeline
+    tx0 = px + pw + 52 * S
+    timeline(d, tx0, W - 24 * S, ay - 13 * S, 26 * S,
+             ((0.02, 0.30, INK), (0.36, 0.62, mid), (0.68, 0.98, FADE)))
+
+    baseline = py + ph + 16 * S
+    d.line([(24 * S, baseline), (W - 24 * S, baseline)], fill=GROUND,
+           width=max(2, int(1.5 * S)))
+    chrome(d, "UMPIRE", "deep clustering into action segments", baseline)
+    return img
+
+
+# --------------------------------------------------------------------------- #
 
 def main():
-    print("writing publication thumbnails:")
+    print("writing thumbnails:")
     save(throwing4(), "throwing4-phases.png")
     save(javelin(), "javelin-phases.png")
     save(diving(), "diving-phases.png")
     save(utal_gnn(), "utal-gnn-graph.png")
     save(boxingvi(), "boxingvi-actions.png")
+    save(cricket(), "cricket-phases.png")
+    save(defect_analysis(), "defect-pairs.png")
+    save(motion_retrieval(), "motion-retrieval.png")
+    save(umpire(), "umpire-clusters.png")
 
 
 if __name__ == "__main__":

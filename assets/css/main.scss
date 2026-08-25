@@ -195,10 +195,11 @@ html[data-theme="dark"] {
 }
 
 /* ==========================================================================
-   PUBLICATION LIST - thumbnail, title, authors, venue, link buttons
+   WORK LISTS - the shared row layout behind /publications/ and /projects/
    ========================================================================== */
 
-.pub-intro {
+.pub-intro,
+.proj-intro {
   margin-bottom: 0.5em;
   font-size: 0.9em;
   color: var(--global-text-color-light);
@@ -209,11 +210,13 @@ html[data-theme="dark"] {
   clear: both;
 }
 
-.pub-list {
+.pub-list,
+.proj-list {
   margin-bottom: 1.5em;
 }
 
-.pub-item {
+.pub-item,
+.proj-item {
   display: flex;
   gap: 1.25rem;
   align-items: flex-start;
@@ -225,7 +228,8 @@ html[data-theme="dark"] {
   }
 }
 
-.pub-thumb {
+.pub-thumb,
+.proj-thumb {
   flex: 0 0 190px;
 
   img {
@@ -238,12 +242,14 @@ html[data-theme="dark"] {
   }
 }
 
-.pub-body {
+.pub-body,
+.proj-body {
   flex: 1 1 auto;
   min-width: 0; /* let long titles wrap instead of stretching the row */
 }
 
-.pub-title {
+.pub-title,
+.proj-title {
   margin: 0 0 0.35rem;
   font-size: 1.05em;
   line-height: 1.35;
@@ -295,14 +301,79 @@ html[data-theme="dark"] {
   color: var(--quote-accent);
 }
 
-.pub-links {
+/* ==========================================================================
+   PROJECT LIST - organisation, period, summary, result bullets, topic tags
+   ========================================================================== */
+
+.proj-meta {
+  margin: 0 0 0.4rem;
+  font-size: 0.9em;
+  color: var(--global-text-color-light);
+}
+
+.proj-org {
+  font-weight: 600;
+  color: var(--global-text-color);
+}
+
+/* Only insert the separator when there is an organisation in front of it */
+.proj-org + .proj-period::before {
+  content: "\00b7";
+  margin: 0 0.45rem;
+  color: var(--global-border-color);
+}
+
+.proj-summary {
+  margin: 0 0 0.5rem;
+  font-size: 0.92em;
+  line-height: 1.6;
+}
+
+.proj-highlights {
+  margin: 0 0 0.6rem;
+  padding-left: 1.1rem;
+  font-size: 0.9em;
+  line-height: 1.55;
+  color: var(--global-text-color-light);
+
+  li {
+    margin-bottom: 0.2rem;
+  }
+
+  strong {
+    color: var(--global-text-color);
+  }
+}
+
+.proj-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0 0 0.5rem;
+}
+
+.proj-tag {
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--global-border-color);
+  border-radius: 999px;
+  background: var(--global-code-background-color);
+  font-size: 0.75em;
+  white-space: nowrap;
+  color: var(--global-text-color-light);
+}
+
+/* ==========================================================================
+   LINK BUTTONS - shared by both lists, emitted by work-links.html
+   ========================================================================== */
+
+.work-links {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
   margin: 0;
 }
 
-.pub-link {
+.work-link {
   display: inline-block;
   padding: 0.15rem 0.6rem;
   border: 1px solid var(--global-border-color);
@@ -325,12 +396,14 @@ html[data-theme="dark"] {
 
 /* Stack the thumbnail above the text on narrow screens */
 @media (max-width: 600px) {
-  .pub-item {
+  .pub-item,
+  .proj-item {
     flex-direction: column;
     gap: 0.75rem;
   }
 
-  .pub-thumb {
+  .pub-thumb,
+  .proj-thumb {
     flex: none;
     width: 100%;
 
