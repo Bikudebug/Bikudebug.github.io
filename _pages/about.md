@@ -7,30 +7,34 @@ redirect_from:
   - /about.html
 ---
 
-I hold a Master's degree in Physics from IIT Gandhinagar, where my academic journey gradually evolved into a deep engagement with computer vision through hands-on research and project-driven exploration. During my time there, I had the opportunity to work under the guidance of [Prof. Ravi Hegde](https://iitgn.ac.in/faculty/ee/fac-ravi), whose mentorship played a key role in shaping my research perspective and technical foundation.
+I work on computer vision for human motion — pose-based action recognition, temporal segmentation of continuous movement, and graph neural networks for activity analysis. My degree is in physics: an M.Sc. from IIT Gandhinagar, where I moved into vision research under the guidance of [Prof. Ravi Hegde](https://iitgn.ac.in/faculty/ee/fac-ravi).
 
-My work focuses on pose-based action recognition, motion understanding, and graph neural networks for human activity analysis. I am particularly interested in building models that learn from minimal supervision and capture complex visual dynamics in human-centric and sports videos.
+One constraint runs through most of my work — use as little supervision as possible. A javelin throw, a dive, a boxing round and a golf swing all carry phase structure, and I am interested in models that recover that structure without frame-level labels, and in stating plainly what a given camera setup cannot recover at all.
 
-Currently, I am exploring multimodal learning, focusing on vision-language models for action captioning, large-scale dataset development for biomechanical analysis, and expanding my research into team sports analysis.
+Sports video is where I test this, because the motion is fast and repeatable and because the measurements have to survive contact with a coach. More recently that has extended to vision-language models for action captioning, dataset construction for biomechanical analysis, and team sports.
 
-I am actively looking for PhD positions where I can contribute and grow as a researcher in computer vision.
-
-## Education
-
-**Indian Institute of Technology, Gandhinagar** (July 2023 – May 2025)  
-M.Sc. in Physics
-
-**Berhampur University, Berhampur** (June 2019 – July 2022)  
-B.Sc. in Physics
+I am looking for PhD positions in computer vision, and I would welcome enquiries about openings in motion understanding, video representation learning, or sports biomechanics.
 
 ## Research Interests
 
-* Unsupervised temporal video segmentation
-* Motion and scene understanding
-* Multi-view and multi-person pose estimation
-* Generative AI and vision-language models
-* Sports analytics
-* Activity recognition
+* **Unsupervised temporal segmentation** — recovering phase boundaries in continuous motion without frame-level labels
+* **Motion and scene understanding** — representations that hold up across subject, viewpoint and sport
+* **Pose estimation and 3D reconstruction** — multi-view and multi-person tracking, and body-mesh recovery from a single camera
+* **Vision-language models** — captioning and describing fine-grained action
+* **Sports analytics and biomechanics** — measurement a coach can act on, with its limits stated beside it
+* **Benchmarks and datasets** — phase-aligned annotation for fine-grained action analysis
+
+## Current Work
+
+I am a computer vision intern at **Apollo Sports**, building monocular analysis dashboards for golf and tennis: one ordinary video is tracked in 2D, lifted to a 3D body mesh, split into canonical phases, and turned into per-player biomechanics in real units, served as a web dashboard.
+
+Before that I worked on team sports analytics with S Combinator Studio, device quality inspection with Walmart and IIT Madras, and 3D human motion representation and retrieval with the TIME@ARC Hub and Griffith University. The [projects](/projects/) page covers each of these in full, and [publications](/publications/) lists the papers.
+
+## Education
+
+**M.Sc. in Physics** — Indian Institute of Technology Gandhinagar, July 2023 – May 2025
+
+**B.Sc. in Physics** — Berhampur University, June 2019 – July 2022
 
 ## Patents
 
