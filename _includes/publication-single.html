@@ -31,12 +31,21 @@
       <p class="pub-authors">{{ author_line | replace: site.author.name, me_bold }}</p>
     {% endif %}
 
+    {%- comment -%}
+      No year for work that is still under review: its date is only there to
+      order the list, and printing it would read as a publication year.
+    {%- endcomment -%}
+    {% assign venue_name = post.venue | strip %}
+    {% assign show_year = true %}
+    {% if post.status == 'Under Review' %}{% assign show_year = false %}{% endif %}
+
     <p class="pub-venue">
-      {% assign venue_name = post.venue | strip %}
       {% if venue_name != "" %}
-        <span class="pub-venue-name">{{ venue_name }}</span>,
+        <span class="pub-venue-name">{{ venue_name }}</span>{% if show_year %},{% endif %}
       {% endif %}
-      <span class="pub-year">{{ post.date | default: "1900-01-01" | date: "%Y" }}</span>
+      {% if show_year %}
+        <span class="pub-year">{{ post.date | default: "1900-01-01" | date: "%Y" }}</span>
+      {% endif %}
       {% if post.status %}
         <span class="pub-badge">{{ post.status }}</span>
       {% endif %}
