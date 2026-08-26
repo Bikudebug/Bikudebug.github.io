@@ -1059,6 +1059,158 @@ def tennis():
 
 
 # --------------------------------------------------------------------------- #
+# 12. Video ingestion - raw footage sorted into quality-filtered frames
+#
+# This one is a data-flow diagram rather than a motion figure: a reel of raw
+# footage on the left, and on the right the frames it exports, split into the
+# good ones the downstream models get and the poor ones held back. The three
+# good frames carry the three colours of the timeline underneath, which is how
+# the detected shot boundaries are shown without writing a word on the picture.
+# --------------------------------------------------------------------------- #
+
+# Three exported frames of the same passage of play, and the two frames rejected
+# from it. All five are ordinary running / jumping poses: what matters here is
+# the frame each one sits in, not the pose itself.
+INGEST_GOOD = [
+    dict(head=(48, 20), neck=(48, 36), pelvis=(50, 72),
+         elbow_r=(66, 46), wrist_r=(78, 34), elbow_l=(32, 48), wrist_l=(22, 60),
+         knee_r=(64, 96), ankle_r=(74, 124), knee_l=(34, 96), ankle_l=(24, 124)),
+    dict(head=(50, 16), neck=(50, 32), pelvis=(50, 68),
+         elbow_r=(64, 24), wrist_r=(72, 8), elbow_l=(34, 44), wrist_l=(26, 58),
+         knee_r=(62, 94), ankle_r=(68, 122), knee_l=(36, 94), ankle_l=(30, 124)),
+    dict(head=(46, 24), neck=(46, 40), pelvis=(48, 76),
+         elbow_r=(64, 52), wrist_r=(76, 62), elbow_l=(30, 54), wrist_l=(18, 64),
+         knee_r=(62, 100), ankle_r=(70, 126), knee_l=(32, 100), ankle_l=(22, 126)),
+]
+
+INGEST_POOR = [
+    dict(head=(46, 22), neck=(46, 38), pelvis=(48, 74),
+         elbow_r=(62, 50), wrist_r=(72, 40), elbow_l=(32, 50), wrist_l=(24, 62),
+         knee_r=(60, 98), ankle_r=(68, 124), knee_l=(34, 98), ankle_l=(28, 126)),
+    dict(head=(52, 18), neck=(52, 34), pelvis=(50, 70),
+         elbow_r=(66, 34), wrist_r=(74, 20), elbow_l=(36, 46), wrist_l=(28, 60),
+         knee_r=(62, 96), ankle_r=(70, 124), knee_l=(38, 96), ankle_l=(32, 124)),
+]
+
+
+def film_strip(d, x, y, w, h, cells, colour):
+    """A reel of footage: sprocket bands down both long edges, `cells` frames."""
+    lw = max(2, int(1.6 * S))
+    d.rounded_rectangle([x, y, x + w, y + h], radius=4 * S,
+                        fill=(255, 255, 255), outline=GROUND, width=lw)
+
+    band = h * 0.19
+    holes = cells * 2
+    hw, hh = w / holes * 0.46, band * 0.5
+    for i in range(holes):
+        cx = x + w * (i + 0.5) / holes
+        for cy in (y + band * 0.5, y + h - band * 0.5):
+            d.rounded_rectangle([cx - hw / 2, cy - hh / 2, cx + hw / 2, cy + hh / 2],
+                                radius=1.5 * S, fill=GROUND)
+
+    # The frames on the reel are left empty. At 190px a strip this size gives
+    # each one about 6px of width, which is not enough for anything inside it to
+    # be more than a smudge; drawn as plain outlines they at least read as film.
+    fy0, fy1 = y + band + 3 * S, y + h - band - 3 * S
+    fw = w / cells * 0.76
+    for i in range(cells):
+        fx = x + w * (i + 0.5) / cells
+        d.rectangle([fx - fw / 2, fy0, fx + fw / 2, fy1],
+                    outline=colour, width=max(1, int(1.2 * S)))
+
+
+def frame_card(d, x, y, w, h, pose, colour, poor=False):
+    """One exported frame: a card with a figure in it.
+
+    A poor frame is a grey card carrying a doubled, offset figure. Greying it
+    alone reads as 'older'; the ghost is what reads as 'too blurred to use',
+    which is the reason the pipeline holds it back.
+    """
+    lw = max(2, int(1.8 * S))
+    if poor:
+        d.rounded_rectangle([x, y, x + w, y + h], radius=5 * S,
+                            fill=lerp(BG, GROUND, 0.55), outline=GROUND, width=lw)
+    else:
+        d.rounded_rectangle([x, y, x + w, y + h], radius=5 * S,
+                            fill=(255, 255, 255), outline=colour, width=lw)
+
+    inset = 6 * S
+    bh = h - 2 * inset
+    bw = bh * LOCAL_W / LOCAL_H          # unstretched: one unit of x = one of y
+    ox = x + (w - bw) / 2
+    figure_lw = max(2, int(1.6 * S))
+    # head_r is well above skeleton()'s default: at this size the default circle
+    # comes out under 4px across and the figure looks decapitated.
+    kw = dict(lw=figure_lw, head_r=9.5, joint_r=max(1, int(1.1 * S)))
+    if poor:
+        d.rounded_rectangle([x + lw, y + lw, x + w - lw, y + h - lw], radius=4 * S,
+                            fill=lerp(BG, GROUND, 0.55))
+        # A short offset only. Pulled any further apart the two copies stop
+        # overlapping and read as two players in the frame rather than as one
+        # player smeared across it.
+        ghost = lerp(lerp(BG, GROUND, 0.55), MUTED, 0.5)
+        skeleton(d, pose, ox + 3.5 * S, y + inset, bw, bh, ghost, **kw)
+        skeleton(d, pose, ox, y + inset, bw, bh, MUTED, **kw)
+    else:
+        skeleton(d, pose, ox, y + inset, bw, bh, colour, **kw)
+
+
+def video_ingestion():
+    img, d = canvas()
+    baseline = 168 * S
+    mid = lerp(FADE, INK, 0.5)
+    # The palest of the three segment colours. Held off FADE itself: an outlined
+    # card in FADE has all but disappeared by the time the thumbnail is down to
+    # 190px, where the same colour as a filled timeline bar is still fine.
+    pale = lerp(FADE, INK, 0.22)
+
+    # the reel, with two more behind it: the input is a file, a folder of files
+    # or a playlist, so a single strip would undersell it
+    sx, sy, sw, sh = 22 * S, 86 * S, 108 * S, 54 * S
+    for back in (2, 1):
+        d.rounded_rectangle([sx + back * 4 * S, sy - back * 6 * S,
+                             sx + sw + back * 4 * S, sy + sh - back * 6 * S],
+                            radius=4 * S, fill=BG, outline=GROUND,
+                            width=max(1, int(1.4 * S)))
+    film_strip(d, sx, sy, sw, sh, 5, FADE)
+
+    # the split: one line out of the reel, then one branch into each row
+    good_y, poor_y = 86 * S, 142 * S
+    bx = 148 * S
+    d.line([(sx + sw + 8 * S, (good_y + poor_y) / 2), (bx, (good_y + poor_y) / 2)],
+           fill=MUTED, width=max(2, int(2 * S)))
+    d.line([(bx, good_y), (bx, poor_y)], fill=MUTED, width=max(2, int(2 * S)))
+    for y in (good_y, poor_y):
+        arrow(d, bx, 176 * S, y, MUTED)
+
+    # kept frames, one per detected segment and coloured to match the timeline
+    for i, pose in enumerate(INGEST_GOOD):
+        colour = (INK, mid, pale)[i]
+        frame_card(d, (192 + i * 56) * S, good_y - 28 * S, 44 * S, 56 * S,
+                   pose, colour)
+
+    # rejected frames, on the row below and stopping short of the kept row's
+    # width - the point is that fewer frames come out of this branch
+    for i, pose in enumerate(INGEST_POOR):
+        frame_card(d, (192 + i * 56) * S, poor_y - 20 * S, 44 * S, 40 * S,
+                   pose, GROUND, poor=True)
+
+    d.line([(20 * S, baseline), (W - 20 * S, baseline)], fill=GROUND,
+           width=max(2, int(1.5 * S)))
+
+    # the shot boundaries found in the clip: three segments, in the colours the
+    # kept frames were drawn in, with the cut between them left blank
+    ty, th = baseline + 16 * S, 24 * S
+    timeline(d, 20 * S, W - 20 * S, ty, th,
+             ((0.02, 0.30, INK), (0.36, 0.62, mid), (0.70, 0.98, pale)),
+             ticks=False)
+
+    chrome(d, "Video Ingestion", "frame sampling, quality filter, shot boundaries",
+           baseline, caption_y=ty + th + 12 * S)
+    return img
+
+
+# --------------------------------------------------------------------------- #
 
 def main():
     print("writing thumbnails:")
@@ -1073,6 +1225,7 @@ def main():
     save(umpire(), "umpire-clusters.png")
     save(golf(), "golf-swing-phases.png")
     save(tennis(), "tennis-strokes.png")
+    save(video_ingestion(), "video-ingestion.png")
 
 
 if __name__ == "__main__":
