@@ -4,7 +4,7 @@ collection: projects
 org: "Research Project, IIT Gandhinagar"
 period: "Feb 2025 – May 2025"
 date: 2025-02-01
-thumb: '/images/boxingvi-actions.png'
+thumb: '/images/boxingvi-actions.gif'
 summary: "Worked on a boxing action dataset, focusing on analyzing fine-grained motion patterns and temporal dynamics in combat sports. Explored techniques for action segmentation and performance understanding using computer vision methods."
 tags:
   - Action Segmentation

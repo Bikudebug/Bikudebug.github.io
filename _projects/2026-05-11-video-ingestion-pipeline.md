@@ -3,7 +3,7 @@ title: "Sports Video Ingestion and Preprocessing Pipeline"
 collection: projects
 period: "May 2026"
 date: 2026-05-11
-thumb: '/images/video-ingestion.png'
+thumb: '/images/video-ingestion.gif'
 codeurl: 'https://github.com/Bikudebug/sports-video-ingestion-pipeline'
 summary: "Built a configurable pipeline that turns raw sports footage — a single file, a folder of matches, or an HLS playlist — into model-ready data: container metadata, frame sampling to a target FPS, resolution and colour-space normalisation, per-frame blur, brightness and contrast scoring, HSV-histogram shot-boundary detection, and JSON/JSONL manifests. YOLOv8n detection and MMPose multi-person pose estimation run on the exported frames as downstream checks that the output is actually usable."
 highlights:

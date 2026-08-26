@@ -4,7 +4,7 @@ collection: projects
 org: "SRIP Internship, IIT Gandhinagar"
 period: "May 2025 – Jul 2025"
 date: 2025-05-01
-thumb: '/images/javelin-phases.png'
+thumb: '/images/javelin-phases.gif'
 summary: "Built an unsupervised ASTGCN + SOT framework to automatically detect biomechanical phase transitions in elite javelin throws, eliminating the need for manual labeling."
 highlights:
   - "Achieved state-of-the-art performance and released a dataset of <strong>211 professionally annotated videos</strong> covering key motion phases."

@@ -7,6 +7,13 @@ renders at 190x120. Each is a small schematic of what the work actually does,
 drawn in one shared style so both lists read as a set. Projects that are the
 same work as a paper reuse that paper's thumbnail.
 
+Every thumbnail is written twice: a still PNG, and an animated GIF in which the
+action plays out inside the frame. Each drawing function takes a progress
+argument `u` running 0 -> 1, and the frame at u=1 is the still. That is the
+whole discipline of the animation: nothing is invented for the last frame, so
+the GIF settles onto the composition the still already had, holds it, and
+replays. The action is a loop of a clip, not a decoration bolted on top.
+
 Run from the repository root:
     python scripts/make_publication_thumbs.py
 """
@@ -47,6 +54,21 @@ BONES = [
 JOINTS = ("pelvis", "elbow_r", "wrist_r", "elbow_l", "wrist_l",
           "knee_r", "ankle_r", "knee_l", "ankle_l")
 
+# Animation. GIF_W x GIF_H is the 190x120 slot at 2x, which is what the still
+# PNG is drawn for as well; the frames are rendered on the full 760x480 canvas
+# and scaled down, so the GIF and the PNG are the same drawing at the same size.
+#
+# GIF_MS x GIF_FRAMES is roughly 1.8s of motion, then the last frame is held for
+# GIF_HOLD_MS. The hold is the point: a figure in continuous motion in a 190px
+# box on a list of ten of them is unreadable, and the composition the still was
+# designed as is the thing worth looking at. So each loop plays the action once,
+# comes to rest on the still, and waits.
+GIF_W, GIF_H = 380, 240
+GIF_FRAMES = 26
+GIF_MS = 70
+GIF_HOLD_MS = 1800
+GIF_COLORS = 96
+
 
 # --------------------------------------------------------------------------- #
 # drawing helpers
@@ -65,6 +87,89 @@ def font(size, bold=True):
 
 def lerp(a, b, t):
     return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+# --------------------------------------------------------------------------- #
+# animation helpers
+#
+# Every one of these is written so that its value at u=1 is exactly what the
+# still drew. That is what lets the same code produce both files, and it is why
+# `fade` starts from BG rather than using real transparency: on a flat
+# background a colour walked out of BG reads as a fade-in, costs no alpha
+# channel, and lands on the still's own colour when it arrives.
+# --------------------------------------------------------------------------- #
+
+def clamp(t, lo=0.0, hi=1.0):
+    return lo if t < lo else hi if t > hi else t
+
+
+def ease(t):
+    """Smoothstep. Used per phase, so the figure settles into each pose."""
+    t = clamp(t)
+    return t * t * (3 - 2 * t)
+
+
+def stage(u, start, end):
+    """Progress through one stage of the loop, 0 before it and 1 after it."""
+    return ease((u - start) / (end - start)) if end > start else float(u >= end)
+
+
+def fade(colour, t):
+    """`colour` emerging from the page background. t=1 is the colour itself."""
+    return lerp(BG, colour, clamp(t))
+
+
+def morph(a, b, t):
+    """Interpolate two pose dicts joint by joint."""
+    return {k: (a[k][0] + (b[k][0] - a[k][0]) * t,
+                a[k][1] + (b[k][1] - a[k][1]) * t)
+            for k in a if k in b}
+
+
+def offset_pose(pose, a, b, t):
+    """`pose` displaced by t of the a -> b movement, joint by joint.
+
+    Lets one authored movement be applied to several different figures, which is
+    how the retrieved neighbours perform the query's motion without each of them
+    needing a second keyframe written out by hand.
+    """
+    return {k: (pose[k][0] + (b[k][0] - a[k][0]) * t,
+                pose[k][1] + (b[k][1] - a[k][1]) * t)
+            for k in pose if k in a and k in b}
+
+
+def mid_point(p0, p1, t):
+    return (p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t)
+
+
+def relay(u, count, lead=0.16):
+    """How a phase strip of `count` cells fills in. A generator of the cells
+    that exist yet, as (index, progress through this cell's move, opacity).
+
+    The strip animates as a relay, not as one figure walking across it. Cell 0
+    appears; every cell after it appears holding the pose the cell before it
+    finished on, and then moves out of that pose into its own. So the movement
+    is handed along the strip and no figure ever leaves its own cell.
+
+    The first draft did have a single figure travel the whole width, depositing
+    a copy in each cell. It was wrong: a cell is only about a fifth wider than
+    the figure standing in it, so in transit the traveller sat squarely on top
+    of the copy it had just left, and the mesh-bodied strips turned into a
+    two-headed blot halfway through every phase.
+    """
+    slot = (1 - lead) / max(1, count - 1)
+    for i in range(count):
+        start = 0.0 if i == 0 else lead + slot * (i - 1)
+        span = lead if i == 0 else slot
+        if u < start:
+            return
+        run = clamp((u - start) / span)
+        yield i, ease(run), min(1.0, run / 0.45)
+
+
+def relay_pose(poses, i, progress):
+    """The pose cell `i` holds: out of its predecessor's pose and into its own."""
+    return morph(poses[max(i - 1, 0)], poses[i], progress)
 
 
 def canvas():
@@ -134,17 +239,33 @@ def skeleton(d, pose, ox, oy, bw, bh, colour, lw=None, head_r=6.5, joint_r=None)
     return pt
 
 
-def dotted_curve(d, p0, p1, lift, colour, width, dots=22):
-    """A dotted quadratic arc from p0 to p1, `lift` pixels above the chord."""
+def bezier(p0, control, p1, t):
+    """Quadratic interpolation, for a path that has to bend around something."""
+    return tuple((1 - t) ** 2 * a + 2 * (1 - t) * t * c + t ** 2 * b
+                 for a, c, b in zip(p0, control, p1))
+
+
+def curve_at(p0, p1, lift, t):
+    """The point at `t` along the same quadratic arc dotted_curve draws."""
     cx = (p0[0] + p1[0]) / 2
     cy = (p0[1] + p1[1]) / 2 - lift
+    return ((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * cx + t ** 2 * p1[0],
+            (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * cy + t ** 2 * p1[1])
+
+
+def dotted_curve(d, p0, p1, lift, colour, width, dots=22, upto=1.0):
+    """A dotted quadratic arc from p0 to p1, `lift` pixels above the chord.
+
+    `upto` truncates it, so the path can be laid down behind a ball in flight
+    rather than being there before the ball has been struck.
+    """
     r = max(1, int(width))
     for i in range(dots + 1):
         t = i / dots
-        x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * cx + t ** 2 * p1[0]
-        y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * cy + t ** 2 * p1[1]
-        if i % 2 == 0:
-            d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
+        if t > upto or i % 2:
+            continue
+        x, y = curve_at(p0, p1, lift, t)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
 
 
 def arrow(d, x0, x1, y, colour):
@@ -153,17 +274,31 @@ def arrow(d, x0, x1, y, colour):
 
 
 def timeline(d, x0, x1, y, h, segments, ticks=True):
-    """An outlined track with filled segments given as (start, end, colour)."""
+    """An outlined track with filled segments given as (start, end, colour).
+
+    A segment may carry a fourth item, the fraction of itself that has been
+    found so far: it then grows out of its own start, and its boundary ticks
+    only appear once it is complete. An empty track is a track the detector has
+    not run on yet, which is where every animated timeline here begins.
+    """
     d.rounded_rectangle([x0, y, x1, y + h], radius=5 * S,
                         outline=GROUND, width=max(2, int(1.6 * S)))
     span = x1 - x0
-    for start, end, colour in segments:
-        d.rounded_rectangle([x0 + span * start, y + 3 * S,
-                             x0 + span * end, y + h - 3 * S],
-                            radius=3 * S, fill=colour)
+    for segment in segments:
+        start, end, colour = segment[:3]
+        grown = start + (end - start) * (segment[3] if len(segment) > 3 else 1.0)
+        px0, px1 = x0 + span * start, x0 + span * grown
+        if px1 - px0 < 2:
+            continue
+        # A bar narrower than its own corner radius cannot be rounded, and the
+        # first frames of a growing segment are exactly that.
+        d.rounded_rectangle([px0, y + 3 * S, px1, y + h - 3 * S],
+                            radius=min(3 * S, (px1 - px0) / 2), fill=colour)
     if ticks:
-        for start, end, _ in segments:
-            for frac in (start, end):
+        for segment in segments:
+            if len(segment) > 3 and segment[3] < 0.999:
+                continue
+            for frac in segment[:2]:
                 x = x0 + span * frac
                 dashed(d, (x, y + h + 4 * S), (x, y + h + 30 * S), GROUND,
                        max(1, int(1.2 * S)), dash=4 * S, gap=4 * S)
@@ -196,8 +331,14 @@ def phase_grid(d, n, pad_x, pad_top, baseline, divider=True):
     return cell
 
 
-def sequence(title, caption, poses, extras=None, water=False):
-    """The shared left-to-right phase layout used by the motion thumbnails."""
+def sequence(title, caption, poses, extras=None, water=False, u=1.0):
+    """The shared left-to-right phase layout used by the motion thumbnails.
+
+    Animated, the cells take the movement up one after another - see relay().
+    `extras` is handed a fractional position along the whole sequence rather
+    than an integer index, so an implement in the hand swings and releases with
+    the figure instead of jumping between four fixed states.
+    """
     img, d = canvas()
     pad_x, pad_top = 20 * S, 38 * S
     baseline = H - 30 * S
@@ -221,13 +362,15 @@ def sequence(title, caption, poses, extras=None, water=False):
                    fill=GROUND, width=max(2, int(1.5 * S)))
             x, up = nx, not up
 
-    for i, pose in enumerate(poses):
-        colour = lerp(FADE, INK, i / max(1, len(poses) - 1))
+    for i, progress, alpha in relay(u, len(poses)):
+        colour = fade(lerp(FADE, INK, i / max(1, len(poses) - 1)), alpha)
         ox = pad_x + cell * i + cell * 0.08
         bw = cell * 0.84
-        pt = skeleton(d, pose, ox, pad_top, bw, box_h, colour)
+        pt = skeleton(d, relay_pose(poses, i, progress),
+                      ox, pad_top, bw, box_h, colour)
         if extras:
-            extras(d, i, pt, colour, ox, bw, pad_top, box_h)
+            extras(d, max(i - 1, 0) + progress if i else 0.0,
+                   pt, colour, ox, bw, pad_top, box_h)
 
     chrome(d, title, caption, baseline)
     return img
@@ -237,6 +380,44 @@ def save(img, name):
     path = IMAGES / name
     img.save(path, optimize=True)
     print(f"  {name:28s} {path.stat().st_size / 1024:6.1f} KB")
+
+
+def save_gif(draw, name, frames=GIF_FRAMES, colors=GIF_COLORS):
+    """Render `draw(u)` for u across 0..1 and write it as a looping GIF.
+
+    One palette is built from every frame at once and then forced onto all of
+    them. Quantising each frame on its own picks a slightly different set of
+    colours for each, which both defeats the frame-to-frame differencing that
+    keeps these files small and makes the background shimmer as it plays.
+
+    The finished still leads and carries the long hold, and the motion runs
+    behind it: u = 1, then u = 0 .. just under 1, then round again. Perceptually
+    that is the same loop either way round - settle, hold, replay - but it puts
+    the complete picture in frame one, so anything that shows a GIF without
+    playing it shows the composition rather than an empty background. The join
+    back to the front is seamless because the frame after the last one is u = 1.
+    """
+    order = [1.0] + [k / frames for k in range(frames)]
+    seq = [draw(u).resize((GIF_W, GIF_H), Image.LANCZOS) for u in order]
+
+    strip = Image.new("RGB", (GIF_W, GIF_H * len(seq)))
+    for i, frame in enumerate(seq):
+        strip.paste(frame, (0, i * GIF_H))
+    palette = strip.quantize(colors=colors, method=Image.Quantize.MEDIANCUT)
+    flat = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in seq]
+
+    path = IMAGES / name
+    flat[0].save(path, save_all=True, append_images=flat[1:], loop=0,
+                 duration=[GIF_HOLD_MS] + [GIF_MS] * (len(flat) - 1),
+                 optimize=True)
+    print(f"  {name:28s} {path.stat().st_size / 1024:6.1f} KB  "
+          f"{len(flat)} frames")
+
+
+def emit(draw, stem):
+    """Write both files for one thumbnail: the still, and the loop."""
+    save(draw(1.0), stem + ".png")
+    save_gif(draw, stem + ".gif")
 
 
 # --------------------------------------------------------------------------- #
@@ -350,7 +531,7 @@ def mesh_head(d, centre, r, fill, wire, lw):
 
 
 def mesh_figure(d, pose, ox, oy, bw, bh, colour, scale=1.0, head_r=8.0,
-                facing=1, shadow_at=None):
+                facing=1, shadow_at=None, alpha=1.0):
     """Draw a pose as a shaded body mesh. Returns the local->canvas mapper.
 
     The trail side is drawn first in a darker fill, then the trunk over it, then
@@ -382,8 +563,12 @@ def mesh_figure(d, pose, ox, oy, bw, bh, colour, scale=1.0, head_r=8.0,
     if shadow_at is not None:
         ax = (pt("ankle_l")[0] + pt("ankle_r")[0]) / 2
         sx, sy = bw * 0.30, 4.5 * S
+        # `alpha` is only here for the shadow. Everywhere else a figure fades by
+        # being handed a paler `colour`, but the shadow is not drawn in the
+        # figure's colour, so without this it would snap in under a body that is
+        # still arriving.
         d.ellipse([ax - sx, shadow_at - sy, ax + sx, shadow_at + sy],
-                  fill=lerp(BG, GROUND, 0.75))
+                  fill=fade(lerp(BG, GROUND, 0.75), alpha))
 
     def side_limbs(side, fill):
         sh = attach(neck, "shoulder", side)
@@ -452,15 +637,23 @@ THROW_POSES = [
 ]
 
 
-def throwing4():
+def throwing4(u=1.0):
     def shot(d, i, pt, colour, ox, bw, oy, bh):
-        if i < 3:  # implement in hand until release
+        if i >= 2.9:            # released, and out of the cell
+            return
+        if i <= 2:              # in the hand, through the wind-up and the cock
             wx, wy = pt("wrist_r")
-            r = 5 / LOCAL_W * bw
-            d.ellipse([wx - r, wy - r, wx + r, wy + r], fill=colour)
+        else:
+            # Between the cock and the recovery the shot is in the air. It
+            # leaves along the line the hand was travelling, up and to the
+            # right, and is off the canvas by the time the arm has come down.
+            t = i - 2
+            wx, wy = ox + bw * (0.81 + 1.15 * t), oy + bh * (0.076 - 0.05 * t)
+        r = 5 / LOCAL_W * bw
+        d.ellipse([wx - r, wy - r, wx + r, wy + r], fill=colour)
 
     return sequence("Throwing4", "phase-aligned throwing sequence",
-                    THROW_POSES, extras=shot)
+                    THROW_POSES, extras=shot, u=u)
 
 
 # --------------------------------------------------------------------------- #
@@ -494,21 +687,33 @@ JAVELIN_POSES = [
 JAVELIN_SPEAR = [(10, 0.20, 0.40), (20, 0.16, 0.42), (34, 0.03, 0.44), None]
 
 
-def javelin():
+def javelin(u=1.0):
     def spear(d, i, pt, colour, ox, bw, oy, bh):
         lw = max(2, int(2.2 * S))
         bounds = (ox - bw * 0.06, ox + bw * 1.02)
-        if JAVELIN_SPEAR[i] is None:
-            # released: draw it in flight above the athlete
-            implement(d, (ox + bw * 0.55, oy + bh * 0.015), 16,
-                      bw * 0.34, bw * 0.34, colour, lw, bounds)
-        else:
-            angle, back, fwd = JAVELIN_SPEAR[i]
+        if i <= 2:
+            # Carried, withdrawn, then thrown: the three states are three points
+            # on one continuous rotation, so the angle and the two lengths are
+            # simply interpolated and the javelin swings up with the arm.
+            j = min(int(i), 1)
+            f = i - j
+            angle, back, fwd = (a + (b - a) * f for a, b
+                                in zip(JAVELIN_SPEAR[j], JAVELIN_SPEAR[j + 1]))
             implement(d, pt("wrist_r"), angle, bw * back, bw * fwd,
+                      colour, lw, bounds)
+        else:
+            # Released. It slides out of the hand it left - the tail grows as
+            # the tip pulls away - and flattens towards its flight angle, which
+            # is the state the recovery cell was already drawn in.
+            t = i - 2
+            hand = (ox + bw * 0.78, oy + bh * 12 / LOCAL_H)
+            anchor = mid_point(hand, (ox + bw * 0.55, oy + bh * 0.015), t)
+            implement(d, anchor, 34 + (16 - 34) * t,
+                      bw * (0.03 + 0.31 * t), bw * (0.44 - 0.10 * t),
                       colour, lw, bounds)
 
     return sequence("Javelin", "biomechanical phase segmentation",
-                    JAVELIN_POSES, extras=spear)
+                    JAVELIN_POSES, extras=spear, u=u)
 
 
 # --------------------------------------------------------------------------- #
@@ -535,19 +740,27 @@ DIVE_POSES = [
 ]
 
 
-def diving():
+def diving(u=1.0):
     def splash(d, i, pt, colour, ox, bw, oy, bh):
-        if i != len(DIVE_POSES) - 1:
+        # Nothing until the entry is nearly finished, then the two spouts throw
+        # out from the point of entry. Held to the last fifth of the last phase:
+        # a splash that starts while the diver is still opening reads as him
+        # hitting the water on his back.
+        entry = len(DIVE_POSES) - 1
+        t = (i - (entry - 0.45)) / 0.45
+        if t <= 0:
             return
+        t = min(t, 1.0)
         x = ox + bw * 0.50
         y = oy + bh                      # the water line
         lw = max(2, int(1.8 * S))
         for side in (-1, 1):
-            d.line([(x + side * 5 * S, y), (x + side * 12 * S, y - 9 * S)],
+            d.line([(x + side * 5 * S * t, y),
+                    (x + side * 12 * S * t, y - 9 * S * t)],
                    fill=colour, width=lw)
 
     return sequence("Diving", "unsupervised temporal segmentation",
-                    DIVE_POSES, extras=splash, water=True)
+                    DIVE_POSES, extras=splash, water=True, u=u)
 
 
 # --------------------------------------------------------------------------- #
@@ -564,7 +777,7 @@ GRAPH_EDGES = [("wrist_r", "head"), ("wrist_l", "head"), ("wrist_r", "pelvis"),
                ("knee_r", "knee_l"), ("ankle_l", "pelvis"), ("elbow_r", "elbow_l")]
 
 
-def utal_gnn():
+def utal_gnn(u=1.0):
     img, d = canvas()
     pad_top = 40 * S
     baseline = H - 30 * S
@@ -573,8 +786,16 @@ def utal_gnn():
     # --- left: the spatio-temporal graph over a skeleton
     ox, bw = 18 * S, 120 * S
     pt = skeleton(d, GNN_POSE, ox, pad_top, bw, box_h, INK)
-    for a, b in GRAPH_EDGES:
-        d.line([pt(a), pt(b)], fill=FADE, width=max(1, int(1.4 * S)))
+
+    # A charge runs along the extra edges one after another and off the end of
+    # them, which is message passing over the graph: the thing the network
+    # actually does, and the only part of it a still cannot show. It leaves
+    # every edge back in FADE, so the last frame is the still.
+    for k, (a, b) in enumerate(GRAPH_EDGES):
+        lit = max(0.0, 1.0 - abs(6.2 * u - 0.85 * k))
+        d.line([pt(a), pt(b)], fill=lerp(FADE, INK, lit),
+               width=max(1, int(1.4 * S)) + (1 if lit > 0.6 else 0))
+
     for joint in JOINTS:  # not the head - a dot inside the circle reads as an eye
         jx, jy = pt(joint)
         r = max(2, int(2.6 * S))
@@ -585,9 +806,11 @@ def utal_gnn():
     ay = pad_top + box_h * 0.5
     arrow(d, ax0, ax1, ay, MUTED)
 
-    # --- right: a timeline with two localized action segments
+    # --- right: a timeline the two action segments are localized onto, each
+    # growing out of its own start once the charge has passed through the graph
     timeline(d, ax1 + 16 * S, W - 20 * S, pad_top + box_h * 0.34, 26 * S,
-             ((0.08, 0.36, FADE), (0.52, 0.90, INK)))
+             ((0.08, 0.36, FADE, stage(u, 0.34, 0.62)),
+              (0.52, 0.90, INK, stage(u, 0.58, 0.92))))
 
     chrome(d, "UTAL-GNN", "graph embeddings to action boundaries", baseline)
     return img
@@ -607,6 +830,15 @@ BOXER_GUARD = dict(head=(48, 22), neck=(48, 38), pelvis=(50, 74),
                    wrist_l=(56, 32), knee_r=(38, 98), ankle_r=(30, 126),
                    knee_l=(64, 96), ankle_l=(74, 126))
 
+# The same boxer a moment earlier: the lead glove cocked at the cheek, weight
+# still back on the trail leg. The animation is the straight this pose throws,
+# so BOXER_LEAD is not a stance - it is the end of a punch, and the still was
+# always the frame at contact.
+BOXER_WIND = dict(head=(50, 24), neck=(50, 40), pelvis=(48, 75),
+                  elbow_r=(62, 48), wrist_r=(58, 32), elbow_l=(38, 46),
+                  wrist_l=(46, 36), knee_r=(58, 98), ankle_r=(64, 126),
+                  knee_l=(36, 96), ankle_l=(26, 126))
+
 
 def camera(d, x, y, colour, w=13 * S):
     """A small camera glyph, for the multi-view part of the benchmark."""
@@ -617,7 +849,7 @@ def camera(d, x, y, colour, w=13 * S):
               outline=colour, width=max(2, int(1.6 * S)))
 
 
-def boxingvi():
+def boxingvi(u=1.0):
     img, d = canvas()
     pad_top = 42 * S
     baseline = 170 * S          # leaves room for the annotation track below
@@ -630,7 +862,8 @@ def boxingvi():
     # of the other's guard, which is what makes it read as a punch rather than
     # two people standing apart.
     bw = 150 * S
-    for pose, ox, colour in ((BOXER_LEAD, 68 * S, INK),
+    lead = morph(BOXER_WIND, BOXER_LEAD, stage(u, 0.06, 0.50))
+    for pose, ox, colour in ((lead, 68 * S, INK),
                              (BOXER_GUARD, 162 * S, FADE)):
         pt = skeleton(d, pose, ox, pad_top, bw, box_h, colour)
         for hand in ("wrist_r", "wrist_l"):     # gloves
@@ -642,11 +875,15 @@ def boxingvi():
     camera(d, 22 * S, 72 * S, MUTED, w=20 * S)
     camera(d, 320 * S, 72 * S, MUTED, w=20 * S)
 
-    # annotation track: three labelled action segments
+    # Annotation track: three labelled action segments, laid down one after the
+    # other with the middle one landing as the punch does. This is a benchmark,
+    # so what the loop shows is the labelling of a round, not just the round.
     ty = baseline + 14 * S
     th = 22 * S
     timeline(d, 20 * S, W - 20 * S, ty, th,
-             ((0.02, 0.30, INK), (0.36, 0.58, FADE), (0.64, 0.98, INK)),
+             ((0.02, 0.30, INK, stage(u, 0.10, 0.40)),
+              (0.36, 0.58, FADE, stage(u, 0.40, 0.64)),
+              (0.64, 0.98, INK, stage(u, 0.62, 0.92))),
              ticks=False)
 
     chrome(d, "BoxingVI", "multi-modal action benchmark", baseline,
@@ -683,7 +920,7 @@ def stumps(d, x, baseline, h, colour):
                fill=colour, width=max(1, int(1.6 * S)))
 
 
-def cricket():
+def cricket(u=1.0):
     img, d = canvas()
     pad_top = 42 * S
     baseline = 170 * S
@@ -701,7 +938,18 @@ def cricket():
     br = 5 * S
     d.ellipse([ball[0] - br, ball[1] - br, ball[0] + br, ball[1] + br], fill=INK)
     pitch_at = (bat_pt("ankle_r")[0] - 12 * S, baseline - 6 * S)
-    dotted_curve(d, ball, pitch_at, 20 * S, MUTED, 1.8 * S)
+
+    # The delivery. The dotted path is laid down behind the ball rather than
+    # being there from the start, so it reads as the trajectory this ball is
+    # tracing and not as a line already drawn on the picture. The ball itself
+    # fades back into the page as it reaches the pitch: the hand keeps its ball
+    # and the path stays complete, which is the still.
+    flight = stage(u, 0.10, 0.72)
+    dotted_curve(d, ball, pitch_at, 20 * S, MUTED, 1.8 * S, upto=flight)
+    if 0 < flight < 1:
+        fx, fy = curve_at(ball, pitch_at, 20 * S, flight)
+        d.ellipse([fx - br, fy - br, fx + br, fy + br],
+                  fill=fade(INK, 1 - max(0.0, (flight - 0.78) / 0.22)))
 
     # bat: a thin handle out of the hands into a thicker blade, raised behind
     hands = bat_pt("wrist_r")
@@ -712,9 +960,13 @@ def cricket():
 
     stumps(d, 322 * S, baseline, 32 * S, MUTED)
 
+    # run-up, delivery, and the stroke that follows it - the middle phase fills
+    # while the ball is in the air
     ty, th = baseline + 14 * S, 22 * S
     timeline(d, 20 * S, W - 20 * S, ty, th,
-             ((0.02, 0.24, FADE), (0.30, 0.62, INK), (0.68, 0.98, FADE)),
+             ((0.02, 0.24, FADE, stage(u, 0.00, 0.20)),
+              (0.30, 0.62, INK, stage(u, 0.18, 0.66)),
+              (0.68, 0.98, FADE, stage(u, 0.66, 0.94))),
              ticks=False)
 
     chrome(d, "Cricket", "gameplay phase transitions", baseline,
@@ -739,7 +991,7 @@ def device(d, x, y, w, h, colour):
     d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=colour, width=lw)
 
 
-def defect_analysis():
+def defect_analysis(u=1.0):
     img, d = canvas()
     fy, fh = 60 * S, 130 * S
     fw = 130 * S
@@ -753,12 +1005,31 @@ def defect_analysis():
 
     # the sample carries a scratch, ringed in the one non-blue colour on the site
     sx, sy = right_x + fw * 0.60, fy + fh * 0.42
-    d.line([(sx - 9 * S, sy + 5 * S), (sx - 2 * S, sy - 4 * S),
-            (sx + 4 * S, sy + 4 * S), (sx + 10 * S, sy - 3 * S)],
-           fill=DANGER, width=max(2, int(2 * S)), joint="curve")
-    rr = 20 * S
-    d.ellipse([sx - rr, sy - rr, sx + rr, sy + rr], outline=DANGER,
-              width=max(2, int(2 * S)))
+
+    # An inspection pass crossing the sample. The scratch is not drawn until the
+    # sweep has reached it and the ring closes in behind it, so the loop shows
+    # the flaw being found rather than presenting it as already known - which is
+    # the only claim a paired-image detector makes.
+    swept = stage(u, 0.04, 0.70)
+    if 0 < swept < 1:
+        line_x = right_x + fw * swept
+        d.line([(line_x, fy + 3 * S), (line_x, fy + fh - 3 * S)],
+               fill=lerp(GROUND, INK, 0.45), width=max(2, int(1.8 * S)))
+
+    found = clamp((right_x + fw * swept - (sx - 10 * S)) / (14 * S))
+    if found > 0:
+        d.line([(sx - 9 * S, sy + 5 * S), (sx - 2 * S, sy - 4 * S),
+                (sx + 4 * S, sy + 4 * S), (sx + 10 * S, sy - 3 * S)],
+               fill=fade(DANGER, found), width=max(2, int(2 * S)), joint="curve")
+    # The ring closes from wide onto the scratch. It starts a beat after the
+    # scratch is visible: ring first and it reads as a target the sweep aimed
+    # at, rather than as the mark the sweep turned up.
+    ring = stage(u, 0.52, 0.86)
+    if ring > 0:
+        rr = 20 * S * (1 + 0.9 * (1 - ring))
+        d.ellipse([sx - rr, sy - rr, sx + rr, sy + rr],
+                  outline=fade(DANGER, min(1.0, ring * 1.6)),
+                  width=max(2, int(2 * S)))
 
     # divider between the pair
     mid = (left_x + fw + right_x) / 2
@@ -781,6 +1052,14 @@ QUERY_POSE = dict(head=(50, 22), neck=(50, 38), pelvis=(50, 74),
                   wrist_l=(26, 64), knee_r=(64, 98), ankle_r=(70, 126),
                   knee_l=(36, 98), ankle_l=(30, 126))
 
+# The bottom of the query's own swing: arms down and back, hips dropped. The
+# query is a clip, not a posture, and the animation plays it - down and back up
+# once per loop, which returns it to QUERY_POSE and so to the still.
+QUERY_SWING = dict(head=(48, 26), neck=(48, 42), pelvis=(50, 78),
+                   elbow_r=(62, 54), wrist_r=(70, 66), elbow_l=(36, 54),
+                   wrist_l=(30, 68), knee_r=(62, 102), ankle_r=(70, 126),
+                   knee_l=(38, 102), ankle_l=(30, 126))
+
 # the retrieved neighbours: the same action, progressively looser matches
 MATCH_POSES = [
     dict(head=(50, 24), neck=(50, 40), pelvis=(50, 74),
@@ -795,7 +1074,7 @@ MATCH_POSES = [
 ]
 
 
-def motion_retrieval():
+def motion_retrieval(u=1.0):
     img, d = canvas()
     pad_top = 44 * S
     baseline = H - 30 * S
@@ -804,18 +1083,31 @@ def motion_retrieval():
     d.line([(20 * S, baseline), (W - 20 * S, baseline)],
            fill=GROUND, width=max(2, int(1.5 * S)))
 
+    # One swing of the query, down and back up. The matches are displaced by the
+    # same joint deltas rather than being animated separately: they were
+    # retrieved for performing this motion, so they had better perform it.
+    swing = math.sin(math.pi * clamp(u))
+
     # query, at full size
-    skeleton(d, QUERY_POSE, 16 * S, pad_top, 108 * S, box_h, INK)
+    skeleton(d, morph(QUERY_POSE, QUERY_SWING, swing),
+             16 * S, pad_top, 108 * S, box_h, INK)
 
     ax0 = 128 * S
     arrow(d, ax0, ax0 + 26 * S, pad_top + box_h * 0.5, MUTED)
 
-    # ranked matches, shorter and lighter the further down the ranking they are
+    # Ranked matches, shorter and lighter the further down the ranking they are,
+    # and returned in that order: the loop shows the ranking being filled in
+    # from the top, which is what a retrieval result is.
     for i, pose in enumerate(MATCH_POSES):
+        arrived = stage(u, 0.20 + 0.20 * i, 0.48 + 0.20 * i)
+        if arrived <= 0:
+            continue
         colour = lerp(INK, FADE, (i + 1) / (len(MATCH_POSES) + 1))
         scale = 1 - 0.06 * i
         bh = box_h * scale
-        skeleton(d, pose, (184 + i * 66) * S, baseline - bh, 96 * S, bh, colour)
+        skeleton(d, offset_pose(pose, QUERY_POSE, QUERY_SWING, swing),
+                 (184 + i * 66) * S, baseline - bh + (1 - arrived) * 12 * S,
+                 96 * S, bh, fade(colour, arrived))
 
     chrome(d, "3D Motion Retrieval", "query and ranked motion matches", baseline)
     return img
@@ -825,7 +1117,7 @@ def motion_retrieval():
 # 9. UMPIRE - deep clustering of embeddings into action segments
 # --------------------------------------------------------------------------- #
 
-def umpire():
+def umpire(u=1.0):
     img, d = canvas()
     rng = random.Random(7)      # fixed seed: the scatter must be reproducible
     mid = lerp(FADE, INK, 0.5)
@@ -839,14 +1131,36 @@ def umpire():
 
     clusters = ((0.28, 0.30, INK), (0.70, 0.34, mid), (0.46, 0.74, FADE))
     r = 3.4 * S
-    for cx, cy, colour in clusters:
-        for _ in range(9):
+
+    # Every embedding lands unlabelled - grey, drifting in from the middle of the
+    # panel - and only then does the clustering resolve, one group at a time,
+    # each group taking its colour as the stretch of timeline it explains fills
+    # in beside it. Deep clustering is a two-step claim and this is the honest
+    # order to make it in: the points exist before the labels do.
+    landed = [stage(u, 0.00 + 0.010 * k, 0.30 + 0.010 * k) for k in range(9)]
+    labelled = [stage(u, 0.42, 0.62), stage(u, 0.56, 0.76), stage(u, 0.70, 0.90)]
+    for c, (cx, cy, colour) in enumerate(clusters):
+        for k in range(9):
             x = px + (cx + rng.gauss(0, 0.075)) * pw
             y = py + (cy + rng.gauss(0, 0.075)) * ph
-            d.ellipse([x - r, y - r, x + r, y + r], fill=colour)
-    for nx, ny in ((0.10, 0.86), (0.88, 0.82), (0.14, 0.56)):  # DBSCAN noise
-        x, y = px + nx * pw, py + ny * ph
-        d.ellipse([x - r, y - r, x + r, y + r], outline=MUTED,
+            here = landed[k]
+            if here <= 0:
+                continue
+            x, y = mid_point((px + pw * 0.5, py + ph * 0.5), (x, y), here)
+            # from the panel's own white, so a point does not appear against it
+            # as a hard grey dot on frame one
+            tone = lerp(lerp((255, 255, 255), MUTED, here), colour, labelled[c])
+            d.ellipse([x - r, y - r, x + r, y + r], fill=tone)
+    for k, (nx, ny) in enumerate(((0.10, 0.86), (0.88, 0.82), (0.14, 0.56))):
+        # the DBSCAN noise: never claimed by a cluster, so it is the one thing on
+        # the panel that stays hollow and grey the whole way through
+        here = stage(u, 0.24 + 0.06 * k, 0.52 + 0.06 * k)
+        if here <= 0:
+            continue
+        x, y = mid_point((px + pw * 0.5, py + ph * 0.5),
+                         (px + nx * pw, py + ny * ph), here)
+        d.ellipse([x - r, y - r, x + r, y + r],
+                  outline=lerp((255, 255, 255), MUTED, here),
                   width=max(1, int(1.4 * S)))
 
     ay = py + ph * 0.5
@@ -855,7 +1169,9 @@ def umpire():
     # each cluster becomes a labelled stretch of the timeline
     tx0 = px + pw + 52 * S
     timeline(d, tx0, W - 24 * S, ay - 13 * S, 26 * S,
-             ((0.02, 0.30, INK), (0.36, 0.62, mid), (0.68, 0.98, FADE)))
+             ((0.02, 0.30, INK, labelled[0]),
+              (0.36, 0.62, mid, labelled[1]),
+              (0.68, 0.98, FADE, labelled[2])))
 
     baseline = py + ph + 16 * S
     d.line([(24 * S, baseline), (W - 24 * S, baseline)], fill=GROUND,
@@ -904,32 +1220,55 @@ GOLF_SHAFT = [(88, 128), (44, 6), (58, 8)]
 # On the ground at address and at the top, gone once the ball has been struck.
 BALL_AT = (92, 127)
 
+# Where the club head goes between the three authored positions. A straight line
+# from the ball up to the top of the backswing runs through the golfer's own
+# hips, so that leg bends out around his trail side.
+#
+# From the top to the finish it needs no help, and specifically must not be
+# routed down through the ball: these three poses carry no impact frame, the
+# hands go from high to high without ever coming down, and a club head put on
+# the ball while the hands are up by the ear is a pole through the man. So the
+# head stays above him and the body turns under it. The downswing is the one
+# thing in this set the still cannot support, and inventing it looked worse than
+# leaving it out.
+GOLF_BACKSWING_ARC = (116, 46)
 
-def golf():
+
+def golf_club_at(x):
+    """The club head at fractional cell position `x`, in local coordinates."""
+    if x <= 1:
+        return bezier(GOLF_SHAFT[0], GOLF_BACKSWING_ARC, GOLF_SHAFT[1], x)
+    return mid_point(GOLF_SHAFT[1], GOLF_SHAFT[2], x - 1)
+
+
+def golf(u=1.0):
     img, d = canvas()
     pad_x, pad_top = 20 * S, 42 * S
     baseline = 170 * S
     cell = phase_grid(d, len(GOLF_POSES), pad_x, pad_top, baseline)
     box_h = baseline - pad_top
 
-    for i, pose in enumerate(GOLF_POSES):
+    for i, progress, alpha in relay(u, len(GOLF_POSES)):
         # The fade starts a third of the way along rather than at FADE itself: a
         # mesh body is mostly pale fill, so a figure outlined in FADE all but
         # disappears once the thumbnail is scaled down to 190px.
         t = i / (len(GOLF_POSES) - 1)
-        colour = lerp(FADE, INK, 0.35 + 0.65 * t)
+        colour = fade(lerp(FADE, INK, 0.35 + 0.65 * t), alpha)
         ox = pad_x + cell * i + cell * 0.08
         bw = cell * 0.84
+        # where this cell is in the swing as a whole, for the club and the ball
+        x = max(i - 1, 0) + progress if i else 0.0
 
         def local(lx, ly, ox=ox, bw=bw):
             return (ox + lx / LOCAL_W * bw, pad_top + ly / LOCAL_H * box_h)
 
-        pt = mesh_figure(d, pose, ox, pad_top, bw, box_h, colour,
-                         shadow_at=baseline)
+        pt = mesh_figure(d, relay_pose(GOLF_POSES, i, progress),
+                         ox, pad_top, bw, box_h, colour,
+                         shadow_at=baseline, alpha=alpha)
 
         # shaft out of the hands, with the head as a short thick stroke square
         # to it - that reads as a club head whichever way the shaft points.
-        hands, tip = pt("wrist_r"), local(*GOLF_SHAFT[i])
+        hands, tip = pt("wrist_r"), local(*golf_club_at(x))
         d.line([hands, tip], fill=colour, width=max(2, int(2.2 * S)))
         vx, vy = tip[0] - hands[0], tip[1] - hands[1]
         n = math.hypot(vx, vy) or 1
@@ -938,15 +1277,27 @@ def golf():
                 (tip[0] + nx * 4 * S, tip[1] + ny * 4 * S)],
                fill=colour, width=max(4, int(5 * S)))
 
-        if i < 2:
+        # The ball goes early in the last transition, not halfway through it.
+        # Impact falls between the top and the finish, and between is all a
+        # three-keyframe strip can say about it: by the time the golfer is posed
+        # at the finish the ball is long gone, so it leaves at the start of that
+        # move rather than waiting for a downswing that is not drawn.
+        br = 4 * S
+        if x <= 1.10:                    # teed up, through address and the top
             bx, by = local(*BALL_AT)
-            br = 4 * S
             d.ellipse([bx - br, by - br, bx + br, by + br], fill=colour)
+        elif x < 1.62:                   # struck, climbing away and out of shot
+            f = (x - 1.10) / 0.52
+            bx, by = local(BALL_AT[0] + 34 * f, BALL_AT[1] - 58 * f)
+            d.ellipse([bx - br, by - br, bx + br, by + br],
+                      fill=fade(colour, 1 - f))
 
-    # the eight canonical phases the detector splits the clip into
+    # The eight canonical phases the detector splits the clip into, filling as
+    # the swing runs through them - the whole point of the dashboard is that the
+    # phases come out of the video, so they should not be there before it plays.
     ty, th, n = baseline + 16 * S, 24 * S, 8
-    segments = [(i / n + 0.008, (i + 1) / n - 0.008, lerp(FADE, INK, i / (n - 1)))
-                for i in range(n)]
+    segments = [(i / n + 0.008, (i + 1) / n - 0.008, lerp(FADE, INK, i / (n - 1)),
+                 stage(u, 0.06 + 0.105 * i, 0.20 + 0.105 * i)) for i in range(n)]
     timeline(d, pad_x, W - pad_x, ty, th, segments, ticks=False)
 
     chrome(d, "Golf Swing", "3D mesh, eight-phase segmentation", baseline,
@@ -965,6 +1316,20 @@ TENNIS_POSE = dict(head=(44, 22), neck=(44, 38), pelvis=(46, 74),
                    elbow_r=(64, 46), wrist_r=(80, 36), elbow_l=(28, 50),
                    wrist_l=(18, 62), knee_r=(62, 98), ankle_r=(70, 126),
                    knee_l=(32, 98), ankle_l=(24, 126))
+
+# The takeback the contact frame comes out of: racket hand behind the body, the
+# free arm up and pointing at the incoming ball, knees loaded. Both arms are kept
+# out on the same side of the spine and swing forward without crossing it - a
+# limb dragged over the chest is drawn before the trunk and simply vanishes into
+# it, so a cross-body interpolation would make the arm disappear mid-swing.
+TENNIS_WIND = dict(head=(46, 24), neck=(46, 40), pelvis=(48, 76),
+                   elbow_r=(34, 50), wrist_r=(22, 46), elbow_l=(30, 44),
+                   wrist_l=(24, 30), knee_r=(58, 100), ankle_r=(64, 126),
+                   knee_l=(30, 100), ankle_l=(22, 126))
+
+# Racket face angles matching those two poses, in the sense racket() takes: back
+# over the shoulder, then out in front at contact.
+TENNIS_SWING_DEG = (155, 22)
 
 
 def racket(d, hand, angle_deg, reach, colour):
@@ -1013,7 +1378,7 @@ def net(d, x, baseline, h, half_w, colour):
         d.line([(x - half_w, my), (x + half_w, my)], fill=colour, width=mesh)
 
 
-def tennis():
+def tennis(u=1.0):
     img, d = canvas()
     pad_top = 42 * S
     baseline = 170 * S
@@ -1032,9 +1397,12 @@ def tennis():
     orbit(d, (30 * S + bw * 0.46, baseline - 1 * S), bw * 0.54, 14 * S,
           lerp(GROUND, MUTED, 0.45), 2 * S)
 
-    pt = mesh_figure(d, TENNIS_POSE, 30 * S, pad_top, bw, box_h, INK,
-                     shadow_at=baseline)
-    bed = racket(d, pt("wrist_r"), 22, 42 * S, INK)
+    # one forehand: takeback to contact, the racket face turning with the arm
+    swing = stage(u, 0.06, 0.52)
+    pt = mesh_figure(d, morph(TENNIS_WIND, TENNIS_POSE, swing),
+                     30 * S, pad_top, bw, box_h, INK, shadow_at=baseline)
+    a0, a1 = TENNIS_SWING_DEG
+    bed = racket(d, pt("wrist_r"), a0 + (a1 - a0) * swing, 42 * S, INK)
 
     net(d, 268 * S, baseline, 32 * S, 62 * S, MUTED)
 
@@ -1043,14 +1411,34 @@ def tennis():
     # strung head into a bullseye.
     ball = (bed[0] + 11 * S, bed[1] - 4 * S)
     br = 4.5 * S
-    d.ellipse([ball[0] - br, ball[1] - br, ball[0] + br, ball[1] + br], fill=INK)
-    dotted_curve(d, ball, (W - 34 * S, baseline - 48 * S), 30 * S, MUTED, 1.8 * S)
+    # It is one ball for the whole loop, not two: it drops in from over the net
+    # onto the strings, and the still is the instant it arrives. That is the only
+    # way the incoming ball and the ball on the strings can be the same object,
+    # which is what makes the frame read as contact rather than as a serve.
+    ix, iy = curve_at((W - 30 * S, baseline - 104 * S), ball, 14 * S,
+                      stage(u, 0.02, 0.52))
+    d.ellipse([ix - br, iy - br, ix + br, iy + br], fill=INK)
+
+    # and away, laying its path down behind it as it goes
+    away = (W - 34 * S, baseline - 48 * S)
+    flight = stage(u, 0.54, 0.92)
+    dotted_curve(d, ball, away, 30 * S, MUTED, 1.8 * S, upto=flight)
+    # It picks the ball up only once it has cleared the strings. Drawn from the
+    # instant of departure it is a second dot a few pixels from the first, and
+    # for those frames the one ball this thumbnail is careful to keep single
+    # reads as two.
+    if 0.16 < flight < 1:
+        fx, fy = curve_at(ball, away, 30 * S, flight)
+        d.ellipse([fx - br, fy - br, fx + br, fy + br],
+                  fill=fade(INK, 1 - clamp((flight - 0.74) / 0.26)))
 
     # the strokes the classifier finds in the clip, the rest of it neutral
     ty, th = baseline + 16 * S, 24 * S
     mid = lerp(FADE, INK, 0.5)
     timeline(d, 20 * S, W - 20 * S, ty, th,
-             ((0.04, 0.22, INK), (0.34, 0.52, mid), (0.66, 0.90, FADE)),
+             ((0.04, 0.22, INK, stage(u, 0.10, 0.36)),
+              (0.34, 0.52, mid, stage(u, 0.38, 0.62)),
+              (0.66, 0.90, FADE, stage(u, 0.64, 0.90))),
              ticks=False)
 
     chrome(d, "Tennis Strokes", "orbitable 3D mesh, stroke phase metrics",
@@ -1093,8 +1481,13 @@ INGEST_POOR = [
 ]
 
 
-def film_strip(d, x, y, w, h, cells, colour):
-    """A reel of footage: sprocket bands down both long edges, `cells` frames."""
+def film_strip(d, x, y, w, h, cells, colour, lit=None):
+    """A reel of footage: sprocket bands down both long edges, `cells` frames.
+
+    `lit` is the frame the sampler is on, as a fraction across the reel, and it
+    is allowed to run off either end - past the last frame nothing is lit, which
+    is the state the still is in.
+    """
     lw = max(2, int(1.6 * S))
     d.rounded_rectangle([x, y, x + w, y + h], radius=4 * S,
                         fill=(255, 255, 255), outline=GROUND, width=lw)
@@ -1115,8 +1508,10 @@ def film_strip(d, x, y, w, h, cells, colour):
     fw = w / cells * 0.76
     for i in range(cells):
         fx = x + w * (i + 0.5) / cells
+        on = 0.0 if lit is None else max(0.0, 1.0 - abs(lit - i))
         d.rectangle([fx - fw / 2, fy0, fx + fw / 2, fy1],
-                    outline=colour, width=max(1, int(1.2 * S)))
+                    outline=lerp(colour, INK, on),
+                    width=max(1, int(1.2 * S)) + (1 if on > 0.6 else 0))
 
 
 def frame_card(d, x, y, w, h, pose, colour, poor=False):
@@ -1125,16 +1520,25 @@ def frame_card(d, x, y, w, h, pose, colour, poor=False):
     A poor frame is a grey card carrying a doubled, offset figure. Greying it
     alone reads as 'older'; the ghost is what reads as 'too blurred to use',
     which is the reason the pipeline holds it back.
+
+    The corner radius and the inset are both capped against the card's own size
+    rather than fixed: animated, the card is drawn on its way out of the reel at
+    a fraction of its final size, and a 5px radius on a 12px card is not a
+    rounded corner - it is an error.
     """
-    lw = max(2, int(1.8 * S))
+    # The border thins with the card, so a card in transit is a thin outline at
+    # a small size rather than a thick one - the cap is at the full width, so a
+    # finished card is drawn exactly as it always was.
+    lw = max(2, int(1.8 * S * min(1.0, w / (44 * S))))
+    radius = min(5 * S, w / 3, h / 3)
     if poor:
-        d.rounded_rectangle([x, y, x + w, y + h], radius=5 * S,
+        d.rounded_rectangle([x, y, x + w, y + h], radius=radius,
                             fill=lerp(BG, GROUND, 0.55), outline=GROUND, width=lw)
     else:
-        d.rounded_rectangle([x, y, x + w, y + h], radius=5 * S,
+        d.rounded_rectangle([x, y, x + w, y + h], radius=radius,
                             fill=(255, 255, 255), outline=colour, width=lw)
 
-    inset = 6 * S
+    inset = min(6 * S, h * 0.15)
     bh = h - 2 * inset
     bw = bh * LOCAL_W / LOCAL_H          # unstretched: one unit of x = one of y
     ox = x + (w - bw) / 2
@@ -1143,7 +1547,8 @@ def frame_card(d, x, y, w, h, pose, colour, poor=False):
     # comes out under 4px across and the figure looks decapitated.
     kw = dict(lw=figure_lw, head_r=9.5, joint_r=max(1, int(1.1 * S)))
     if poor:
-        d.rounded_rectangle([x + lw, y + lw, x + w - lw, y + h - lw], radius=4 * S,
+        d.rounded_rectangle([x + lw, y + lw, x + w - lw, y + h - lw],
+                            radius=min(4 * S, (w - 2 * lw) / 3, (h - 2 * lw) / 3),
                             fill=lerp(BG, GROUND, 0.55))
         # A short offset only. Pulled any further apart the two copies stop
         # overlapping and read as two players in the frame rather than as one
@@ -1155,7 +1560,7 @@ def frame_card(d, x, y, w, h, pose, colour, poor=False):
         skeleton(d, pose, ox, y + inset, bw, bh, colour, **kw)
 
 
-def video_ingestion():
+def video_ingestion(u=1.0):
     img, d = canvas()
     baseline = 168 * S
     mid = lerp(FADE, INK, 0.5)
@@ -1172,7 +1577,9 @@ def video_ingestion():
                              sx + sw + back * 4 * S, sy + sh - back * 6 * S],
                             radius=4 * S, fill=BG, outline=GROUND,
                             width=max(1, int(1.4 * S)))
-    film_strip(d, sx, sy, sw, sh, 5, FADE)
+    # the sampler running down the reel, one frame at a time. It starts before
+    # the first frame and finishes past the last, so nothing is lit in the still.
+    film_strip(d, sx, sy, sw, sh, 5, FADE, lit=-1 + 7 * clamp(u))
 
     # the split: one line out of the reel, then one branch into each row
     good_y, poor_y = 86 * S, 142 * S
@@ -1183,26 +1590,49 @@ def video_ingestion():
     for y in (good_y, poor_y):
         arrow(d, bx, 176 * S, y, MUTED)
 
+    # Each exported frame leaves the reel and grows into its slot. The order is
+    # interleaved rather than one row and then the other, because that is what
+    # the pipeline does: it decides per frame as it decodes, and the poor ones
+    # are not swept up afterwards - they are set aside as they come.
+    exit_at = (sx + sw + 6 * S, (good_y + poor_y) / 2)
+
+    def card(slot, arrived, pose, colour, poor=False):
+        if arrived <= 0:
+            return
+        x, y, w, h = slot
+        # It leaves the reel at a bit over half size, not a fifth. Smaller than
+        # this and the border is most of the card, so what travels down the
+        # arrow is a dark speck rather than a frame - at 190px the difference
+        # between a small card and a blot is about six pixels.
+        scale = 0.55 + 0.45 * arrived
+        cw, ch = w * scale, h * scale
+        cx, cy = mid_point(exit_at, (x + w / 2, y + h / 2), arrived)
+        frame_card(d, cx - cw / 2, cy - ch / 2, cw, ch, pose, colour, poor=poor)
+
     # kept frames, one per detected segment and coloured to match the timeline
     for i, pose in enumerate(INGEST_GOOD):
-        colour = (INK, mid, pale)[i]
-        frame_card(d, (192 + i * 56) * S, good_y - 28 * S, 44 * S, 56 * S,
-                   pose, colour)
+        card(((192 + i * 56) * S, good_y - 28 * S, 44 * S, 56 * S),
+             stage(u, 0.06 + 0.24 * i, 0.34 + 0.24 * i), pose,
+             (INK, mid, pale)[i])
 
     # rejected frames, on the row below and stopping short of the kept row's
     # width - the point is that fewer frames come out of this branch
     for i, pose in enumerate(INGEST_POOR):
-        frame_card(d, (192 + i * 56) * S, poor_y - 20 * S, 44 * S, 40 * S,
-                   pose, GROUND, poor=True)
+        card(((192 + i * 56) * S, poor_y - 20 * S, 44 * S, 40 * S),
+             stage(u, 0.20 + 0.36 * i, 0.48 + 0.36 * i), pose,
+             GROUND, poor=True)
 
     d.line([(20 * S, baseline), (W - 20 * S, baseline)], fill=GROUND,
            width=max(2, int(1.5 * S)))
 
     # the shot boundaries found in the clip: three segments, in the colours the
-    # kept frames were drawn in, with the cut between them left blank
+    # kept frames were drawn in, with the cut between them left blank. Each one
+    # closes only after the frame it belongs to has been filed.
     ty, th = baseline + 16 * S, 24 * S
     timeline(d, 20 * S, W - 20 * S, ty, th,
-             ((0.02, 0.30, INK), (0.36, 0.62, mid), (0.70, 0.98, pale)),
+             ((0.02, 0.30, INK, stage(u, 0.30, 0.52)),
+              (0.36, 0.62, mid, stage(u, 0.52, 0.72)),
+              (0.70, 0.98, pale, stage(u, 0.72, 0.92))),
              ticks=False)
 
     chrome(d, "Video Ingestion", "frame sampling, quality filter, shot boundaries",
@@ -1212,20 +1642,26 @@ def video_ingestion():
 
 # --------------------------------------------------------------------------- #
 
+THUMBNAILS = (
+    (throwing4, "throwing4-phases"),
+    (javelin, "javelin-phases"),
+    (diving, "diving-phases"),
+    (utal_gnn, "utal-gnn-graph"),
+    (boxingvi, "boxingvi-actions"),
+    (cricket, "cricket-phases"),
+    (defect_analysis, "defect-pairs"),
+    (motion_retrieval, "motion-retrieval"),
+    (umpire, "umpire-clusters"),
+    (golf, "golf-swing-phases"),
+    (tennis, "tennis-strokes"),
+    (video_ingestion, "video-ingestion"),
+)
+
+
 def main():
     print("writing thumbnails:")
-    save(throwing4(), "throwing4-phases.png")
-    save(javelin(), "javelin-phases.png")
-    save(diving(), "diving-phases.png")
-    save(utal_gnn(), "utal-gnn-graph.png")
-    save(boxingvi(), "boxingvi-actions.png")
-    save(cricket(), "cricket-phases.png")
-    save(defect_analysis(), "defect-pairs.png")
-    save(motion_retrieval(), "motion-retrieval.png")
-    save(umpire(), "umpire-clusters.png")
-    save(golf(), "golf-swing-phases.png")
-    save(tennis(), "tennis-strokes.png")
-    save(video_ingestion(), "video-ingestion.png")
+    for draw, stem in THUMBNAILS:
+        emit(draw, stem)
 
 
 if __name__ == "__main__":
