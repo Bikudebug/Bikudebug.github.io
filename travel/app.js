@@ -117,6 +117,7 @@ const VAULT_SLOTS = [
   { id: "aadhaar", name: "Aadhaar card" },
   { id: "admission", name: "Japan Admission", special: true },
   { id: "accommodation", name: "Accommodation (dorm)" },
+  { id: "residence-email", name: "Residence email PDF" },
   { id: "eticket", name: "Flight e-ticket" },
   { id: "niyo", name: "Niyo card details" },
   { id: "extra1", name: "Extra slot 1" },
