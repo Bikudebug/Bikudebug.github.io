@@ -517,11 +517,21 @@ async function renderVault() {
         window.open(url, "_blank");
         setTimeout(() => URL.revokeObjectURL(url), 60000);
       };
+      const save = document.createElement("button");
+      save.textContent = "⬇ Save";
+      save.title = "Download this file to this device";
+      save.onclick = () => {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(rec.blob);
+        a.download = rec.fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      };
       const del = document.createElement("button");
       del.textContent = "🗑";
       del.className = "danger";
       del.onclick = async () => { if (confirm(`Delete ${slot.name}?`)) { await dbDel(slot.id); renderVault(); } };
-      actions.append(view, del);
+      actions.append(view, save, del);
     } else {
       const add = document.createElement("button");
       add.textContent = "➕ Add file";
