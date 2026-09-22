@@ -216,3 +216,6 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 .step.done .step-num { background: var(--ok); color: #04240f; }
 .step.warnstep .step-num { background: #b91c1c; }
+
+/* per-slot note (e.g. file password) — stored only on the device */
+.vault-note { font-size: 13px; color: var(--amber); font-weight: 700; word-break: break-all; }

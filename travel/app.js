@@ -439,8 +439,27 @@ async function renderVault() {
     meta.className = "vault-meta";
     meta.textContent = rec ? `${rec.fileName} · ${(rec.blob.size / 1024).toFixed(0)} KB` : "empty";
     div.appendChild(meta);
+    const noteKey = `note:${slot.id}`;
+    const noteVal = localStorage.getItem(noteKey);
+    if (noteVal) {
+      const note = document.createElement("div");
+      note.className = "vault-note";
+      note.textContent = `📝 ${noteVal}`;
+      div.appendChild(note);
+    }
     const actions = document.createElement("div");
     actions.className = "vault-actions";
+    const nb = document.createElement("button");
+    nb.textContent = "📝";
+    nb.title = "Note (e.g. file password) — saved only on this device";
+    nb.onclick = ev => {
+      ev.stopPropagation();
+      const v = prompt(`Note shown beside “${slot.name}” (e.g. file password):`, noteVal || "");
+      if (v === null) return;
+      v.trim() ? localStorage.setItem(noteKey, v.trim()) : localStorage.removeItem(noteKey);
+      renderVault();
+    };
+    actions.append(nb);
     if (rec) {
       const view = document.createElement("button");
       view.textContent = "👁 View";
@@ -507,11 +526,16 @@ document.getElementById("btn-vault-export").addEventListener("click", async () =
     const rec = await dbGet(slot.id);
     if (rec) docs.push({ id: slot.id, fileName: rec.fileName, data: await blobToDataURL(rec.blob) });
   }
-  if (!docs.length) { alert("Vault is empty — nothing to back up."); return; }
+  const notes = {};
+  for (const slot of VAULT_SLOTS) {
+    const n = localStorage.getItem(`note:${slot.id}`);
+    if (n) notes[slot.id] = n;
+  }
+  if (!docs.length && !Object.keys(notes).length) { alert("Vault is empty — nothing to back up."); return; }
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(pw, salt);
-  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(docs)));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify({ docs, notes })));
   const pkg = JSON.stringify({ v: 1, salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([pkg], { type: "application/json" }));
@@ -534,13 +558,16 @@ document.getElementById("btn-vault-import").addEventListener("click", () => {
       const pkg = JSON.parse(await f.text());
       const key = await deriveKey(pw, unb64(pkg.salt));
       const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(pkg.iv) }, key, unb64(pkg.ct));
-      const docs = JSON.parse(new TextDecoder().decode(pt));
+      const payload = JSON.parse(new TextDecoder().decode(pt));
+      const docs = Array.isArray(payload) ? payload : (payload.docs || []);
+      const notes = Array.isArray(payload) ? {} : (payload.notes || {});
       for (const d of docs) {
         const blob = await (await fetch(d.data)).blob();
         await dbPut(d.id, { fileName: d.fileName, blob });
       }
+      for (const [k, v] of Object.entries(notes)) localStorage.setItem(`note:${k}`, v);
       renderVault();
-      alert(`Restored ${docs.length} document(s) into this device's vault.`);
+      alert(`Restored ${docs.length} document(s) and ${Object.keys(notes).length} note(s) into this device's vault.`);
     } catch {
       alert("Could not open the backup — wrong password or damaged file.");
     }
