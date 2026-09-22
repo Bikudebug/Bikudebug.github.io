@@ -161,13 +161,13 @@ function renderTimeline() {
   const ol = document.getElementById("timeline");
   ol.innerHTML = "";
   const nextId = (STEPS.find(s => !isDone(s.id)) || {}).id;
-  for (const s of STEPS) {
+  STEPS.forEach((s, i) => {
     const li = document.createElement("li");
     li.className = "step" + (isDone(s.id) ? " done" : "") + (s.id === nextId ? " next" : "") + (s.warn ? " warnstep" : "");
     li.innerHTML = `
       <div class="step-box">✓</div>
       <div>
-        <div class="step-when">${s.when}</div>
+        <div class="step-when"><span class="step-num">STEP ${i + 1}/${STEPS.length}</span>${s.when}</div>
         <div class="step-title">${s.title}</div>
         <div class="step-desc">${s.desc}</div>
       </div>`;
@@ -179,7 +179,7 @@ function renderTimeline() {
       renderTimeline();
     });
     ol.appendChild(li);
-  }
+  });
 }
 renderTimeline();
 

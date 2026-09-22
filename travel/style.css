@@ -202,13 +202,17 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .vault-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 @media (max-width: 480px) { .vault-tools { grid-template-columns: 1fr; } }
 
-/* timeline & deadline checklists in two columns (single column on small phones,
-   where two would be unreadably narrow) */
-@media (min-width: 560px) {
-  .timeline { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; align-items: start; }
-  .step { border: 1px solid #1c2946; border-radius: 12px; margin-bottom: 4px; }
-  .step:last-child { border: 1px solid #1c2946; }
-  .deadline-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; align-items: start; }
-  .deadline-list li:last-child { border-bottom: 1px solid #1c2946; }
-  .deadline-list li { border: 1px solid #1c2946; border-radius: 12px; padding: 10px; }
+/* ordered timeline: one clean column of uniform numbered cards */
+.timeline .step {
+  border: 1px solid #1c2946; border-radius: 12px;
+  margin-bottom: 8px; padding: 12px;
+  background: var(--panel2);
 }
+.timeline .step:last-child { border: 1px solid #1c2946; }
+.step-num {
+  display: inline-block; background: #1d4ed8; color: #fff;
+  border-radius: 6px; padding: 1px 7px; margin-right: 7px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px;
+}
+.step.done .step-num { background: var(--ok); color: #04240f; }
+.step.warnstep .step-num { background: #b91c1c; }
