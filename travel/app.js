@@ -536,7 +536,7 @@ document.getElementById("btn-vault-export").addEventListener("click", async () =
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(pw, salt);
   const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify({ docs, notes })));
-  const pkg = JSON.stringify({ v: 1, salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
+  const pkg = JSON.stringify({ v: 2, stamp: new Date().toISOString(), salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([pkg], { type: "application/json" }));
   a.download = "nagoya-vault-backup.json";
@@ -574,6 +574,40 @@ document.getElementById("btn-vault-import").addEventListener("click", () => {
   };
   inp.click();
 });
+
+/* ---------- cloud copy: encrypted vault bundle published on this site ----------
+   The published file is AES-256 encrypted; without the password it is unreadable.
+   When a new copy appears, the app offers to load it into this device's vault. */
+async function checkCloudVault() {
+  let pkg;
+  try {
+    const resp = await fetch("vaultsync/vault-cloud.json", { cache: "no-store" });
+    if (!resp.ok) return;
+    pkg = await resp.json();
+  } catch { return; } /* offline or no cloud copy yet */
+  const stamp = pkg.stamp || "";
+  if (localStorage.getItem("cloud-applied") === stamp) return;
+  if (!confirm("☁️ A synced copy of your documents is available. Load it into this device now?")) return;
+  const pw = prompt("Password of the synced copy:");
+  if (!pw) return;
+  try {
+    const key = await deriveKey(pw, unb64(pkg.salt));
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(pkg.iv) }, key, unb64(pkg.ct));
+    const payload = JSON.parse(new TextDecoder().decode(pt));
+    const docs = payload.docs || [];
+    for (const d of docs) {
+      const blob = await (await fetch(d.data)).blob();
+      await dbPut(d.id, { fileName: d.fileName, blob });
+    }
+    for (const [k, v] of Object.entries(payload.notes || {})) localStorage.setItem(`note:${k}`, v);
+    localStorage.setItem("cloud-applied", stamp);
+    renderVault();
+    alert(`Loaded ${docs.length} document(s) from the synced copy. They are now saved on this device.`);
+  } catch {
+    alert("Wrong password — the synced copy was not loaded. It will be offered again next time.");
+  }
+}
+checkCloudVault();
 
 /* ---------- warn if Chrome's "Desktop site" mode is forcing a wide layout ---------- */
 if (navigator.maxTouchPoints > 0 && window.innerWidth >= 980 && localStorage.getItem("dm-dismissed") !== "1") {

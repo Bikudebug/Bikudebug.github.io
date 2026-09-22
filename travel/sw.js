@@ -1,5 +1,5 @@
 /* Nagoya Journey — offline support */
-const SHELL_CACHE = "shell-v10";
+const SHELL_CACHE = "shell-v11";
 const TILE_CACHE = "tiles-v2";
 
 /* remote map/photo hosts whose responses are cached for offline use */
@@ -39,6 +39,12 @@ async function trimCache(name, max) {
 
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
+
+  // vault sync bundle: always network, never cached — a stale copy defeats syncing
+  if (url.pathname.endsWith("/vaultsync/vault-cloud.json")) {
+    e.respondWith(fetch(e.request).catch(() => new Response("", { status: 503 })));
+    return;
+  }
 
   // map data (style, fonts, sprites, tiles) + waypoint photos: cache-first,
   // capped — whatever you viewed online stays viewable offline
