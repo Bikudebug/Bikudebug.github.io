@@ -178,3 +178,26 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .map-buttons { left: auto; min-width: 420px; }
   .footer { grid-column: 1 / -1; }
 }
+
+/* password lock screen */
+.lock-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.lock-overlay[hidden] { display: none; }
+.lock-box { width: 100%; max-width: 340px; text-align: center; }
+.lock-icon { font-size: 44px; margin-bottom: 6px; }
+.lock-box h2 { margin: 0 0 4px; }
+.lock-box input {
+  display: block; width: 100%; margin: 14px 0 10px;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid #2a3a5f; border-radius: 12px;
+  padding: 14px; font-size: 18px; text-align: center;
+}
+.lock-err { color: #f87171; font-size: 14px; }
+
+/* vault backup / restore buttons */
+.vault-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+@media (max-width: 480px) { .vault-tools { grid-template-columns: 1fr; } }

@@ -13,6 +13,17 @@
 </head>
 <body>
 
+<div id="lock" class="lock-overlay">
+  <div class="lock-box">
+    <div class="lock-icon">🔒</div>
+    <h2>Nagoya Journey</h2>
+    <p class="small">Enter the password to open</p>
+    <input id="lock-pw" type="password" autocomplete="current-password" placeholder="Password">
+    <button id="lock-btn" class="big-btn">Unlock</button>
+    <p id="lock-err" class="lock-err" hidden>Wrong password — try again</p>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="clocks">
     <div class="clock"><span class="clock-label">IST</span><span id="clock-ist">--:--:--</span></div>
@@ -72,6 +83,13 @@
   <h2>🗂️ Document vault <span class="small">(stored only on this phone)</span></h2>
   <p class="small">Files are saved in this browser’s private storage. They are never uploaded anywhere.</p>
   <div id="vault-slots" class="vault-grid"></div>
+  <div class="vault-tools">
+    <button id="btn-vault-export" class="big-btn">💾 Backup vault → encrypted file</button>
+    <button id="btn-vault-import" class="big-btn">📥 Restore backup on this device</button>
+  </div>
+  <p class="small">Phone ↔ laptop: each device has its own vault. To copy documents across, tap <strong>Backup</strong>,
+  send the encrypted file to yourself (Drive / email / USB cable), open the app on the other device and tap
+  <strong>Restore</strong>. The file is useless without the password.</p>
 </section>
 
 <section class="card">

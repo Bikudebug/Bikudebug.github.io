@@ -1,5 +1,5 @@
 /* Nagoya Journey — offline support */
-const SHELL_CACHE = "shell-v5";
+const SHELL_CACHE = "shell-v6";
 const TILE_CACHE = "tiles-v2";
 
 /* remote map/photo hosts whose responses are cached for offline use */

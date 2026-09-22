@@ -88,12 +88,41 @@ const STEPS = [
 /* ---------------- Vault slots ---------------- */
 const VAULT_SLOTS = [
   { id: "passport", name: "Passport" },
-  { id: "niyo", name: "Niyo card details" },
-  { id: "eticket", name: "Flight e-ticket" },
+  { id: "visa", name: "Visa" },
+  { id: "aadhaar", name: "Aadhaar card" },
   { id: "admission", name: "Japan Admission", special: true },
+  { id: "accommodation", name: "Accommodation (dorm)" },
+  { id: "eticket", name: "Flight e-ticket" },
+  { id: "niyo", name: "Niyo card details" },
   { id: "extra1", name: "Extra slot 1" },
   { id: "extra2", name: "Extra slot 2" },
 ];
+
+/* ================= Password gate =================
+   SHA-256 hash only — the password itself is not in this public file. */
+const PW_HASH = "14a254676e12e20d3295ae0e779643dda94e989a6234328f4c062b78f6dd97cb";
+async function sha256hex(s) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+(function initLock() {
+  const overlay = document.getElementById("lock");
+  const input = document.getElementById("lock-pw");
+  const err = document.getElementById("lock-err");
+  if (sessionStorage.getItem("unlocked") === "1") { overlay.hidden = true; return; }
+  async function tryUnlock() {
+    if ((await sha256hex(input.value)) === PW_HASH) {
+      sessionStorage.setItem("unlocked", "1");
+      overlay.hidden = true;
+    } else {
+      err.hidden = false;
+      input.value = "";
+    }
+  }
+  document.getElementById("lock-btn").addEventListener("click", tryUnlock);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") tryUnlock(); });
+  input.focus();
+})();
 
 /* ================= Clocks & countdown ================= */
 function fmtTZ(offsetMin) {
@@ -447,6 +476,86 @@ async function renderVault() {
   }
 }
 renderVault();
+
+/* ask the browser to never auto-delete the vault to free space */
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
+
+/* ---------- encrypted vault backup / restore (for phone ↔ laptop) ---------- */
+function blobToDataURL(blob) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+async function deriveKey(pw, salt) {
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(pw), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" },
+    base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+  );
+}
+const b64 = u8 => btoa(String.fromCharCode(...u8));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+document.getElementById("btn-vault-export").addEventListener("click", async () => {
+  const pw = prompt("Password to lock the backup file (use your app password):");
+  if (!pw) return;
+  const docs = [];
+  for (const slot of VAULT_SLOTS) {
+    const rec = await dbGet(slot.id);
+    if (rec) docs.push({ id: slot.id, fileName: rec.fileName, data: await blobToDataURL(rec.blob) });
+  }
+  if (!docs.length) { alert("Vault is empty — nothing to back up."); return; }
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pw, salt);
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(docs)));
+  const pkg = JSON.stringify({ v: 1, salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([pkg], { type: "application/json" }));
+  a.download = "nagoya-vault-backup.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  alert(`Backed up ${docs.length} document(s) as an ENCRYPTED file.\nSend it to your other device (Drive / email / cable), open the app there, and tap Restore.`);
+});
+
+document.getElementById("btn-vault-import").addEventListener("click", () => {
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".json,application/json";
+  inp.onchange = async () => {
+    const f = inp.files[0];
+    if (!f) return;
+    const pw = prompt("Password of the backup file:");
+    if (!pw) return;
+    try {
+      const pkg = JSON.parse(await f.text());
+      const key = await deriveKey(pw, unb64(pkg.salt));
+      const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(pkg.iv) }, key, unb64(pkg.ct));
+      const docs = JSON.parse(new TextDecoder().decode(pt));
+      for (const d of docs) {
+        const blob = await (await fetch(d.data)).blob();
+        await dbPut(d.id, { fileName: d.fileName, blob });
+      }
+      renderVault();
+      alert(`Restored ${docs.length} document(s) into this device's vault.`);
+    } catch {
+      alert("Could not open the backup — wrong password or damaged file.");
+    }
+  };
+  inp.click();
+});
+
+/* ---------- warn if Chrome's "Desktop site" mode is forcing a wide layout ---------- */
+if (navigator.maxTouchPoints > 0 && window.innerWidth >= 980 && localStorage.getItem("dm-dismissed") !== "1") {
+  const bar = document.createElement("div");
+  bar.style.cssText = "position:fixed;bottom:0;left:0;right:0;z-index:250;background:#7c2d12;color:#fff;padding:12px 14px;font-size:15px;line-height:1.4;";
+  bar.innerHTML = "📱 This page is being shown in <strong>desktop mode</strong>. In Chrome tap the <strong>⋮ menu</strong> and <strong>untick “Desktop site”</strong>, then reload. <button id='dm-x' style='float:right;background:#fff;color:#7c2d12;border:none;border-radius:8px;padding:6px 10px;font-weight:700'>OK</button>";
+  document.body.appendChild(bar);
+  document.getElementById("dm-x").onclick = () => { localStorage.setItem("dm-dismissed", "1"); bar.remove(); };
+}
 
 /* ================= Service worker ================= */
 if ("serviceWorker" in navigator) {
