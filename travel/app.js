@@ -280,7 +280,9 @@ let satOn = false;
 document.getElementById("btn-sat").addEventListener("click", e => {
   satOn = !satOn;
   e.currentTarget.classList.toggle("active", satOn);
-  map.setStyle(satOn ? SAT_STYLE : STREET_STYLE);
+  // diff:false forces a full style reload so "style.load" always fires and
+  // styleReady() redraws the route lines on the new basemap
+  map.setStyle(satOn ? SAT_STYLE : STREET_STYLE, { diff: false });
 });
 
 document.getElementById("btn-route").addEventListener("click", () =>
