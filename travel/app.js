@@ -24,11 +24,6 @@ const STEPS = [
     desc: "Email passport + student visa to student.documents@makemytrip.com. Pack in hand: passport, visa, university acceptance letter, admission docs. Show them at HYD check-in or the 40 kg student baggage can be refused. Enrol in KrisFlyer for free extra benefits.",
   },
   {
-    id: "dorm-reply", when: "Wed 23 Sep — do TODAY", ts: "2026-09-23T20:00:00+05:30", warn: true,
-    title: "Reply to the dorm email + book First Cabin + get cash",
-    desc: "1) REPLY to ITO Kanako's email (ito.kanako.d8@mail.f.thers.ac.jp): move-in 26 Sep, arrival ~14:00, bedding rental yes/no (¥1,650/mo — the room has NO pillow/comforter/sheets). The dorm REQUIRES advance contact. 2) BOOK First Cabin KIX for the night of 25 Sep. 3) Carry ¥60,000–100,000 cash (first dorm bill: Sep rent ¥25,000 unprorated + ¥15,000 restoration + Wi-Fi + utilities; Yucho card takes ~1 week). 4) Consider a Japan eSIM bought in India. 5) Search your inbox for ITO-san's follow-up emails (dorm password; orientation details).",
-  },
-  {
     id: "hyd-imm", when: "Thu 24 Sep · ~20:30 IST", ts: "2026-09-24T20:30:00+05:30", warn: true,
     title: "🛂 INDIAN IMMIGRATION — at Hyderabad airport",
     desc: "This is the ONLY immigration on the Indian side. After check-in and security, go to the Immigration counters with your passport + Japan visa + boarding pass. Officer may ask purpose: say “PhD student at Nagoya University” and show the admission letter if asked. You get an Indian EXIT stamp. Nothing to do in Singapore.",
