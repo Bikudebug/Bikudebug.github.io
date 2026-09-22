@@ -219,3 +219,15 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 /* per-slot note (e.g. file password) — stored only on the device */
 .vault-note { font-size: 13px; color: var(--amber); font-weight: 700; word-break: break-all; }
+
+/* subway plans card */
+#metro-card h3 { margin: 14px 0 6px; font-size: 16px; }
+.metro-steps { margin: 0; padding-left: 22px; font-size: 15px; }
+.metro-steps li { margin: 4px 0; }
+.line-chip {
+  display: inline-block; border-radius: 6px; padding: 1px 8px; margin-right: 6px;
+  font-size: 11px; font-weight: 800; letter-spacing: 0.5px; color: #fff; vertical-align: 2px;
+}
+.chip-red { background: #dc2626; }
+.chip-yellow { background: #b45309; }
+.chip-walk { background: #15803d; }

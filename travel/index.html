@@ -42,6 +42,7 @@
     <button id="btn-wake" class="map-btn" title="Keep screen awake">🔆 Keep awake</button>
     <button id="btn-route" class="map-btn" title="Zoom to full route">🗺️ Route</button>
     <button id="btn-sat" class="map-btn" title="Toggle satellite view">🛰️ Satellite</button>
+    <button id="btn-metro" class="map-btn" title="Zoom to the Nagoya subway route to the dorm">🚇 Metro</button>
   </div>
   <div id="geo-status" class="geo-status"></div>
 </section>
@@ -60,6 +61,35 @@
   <h2>🧭 Journey timeline</h2>
   <p class="small">Tap a step to mark it done. Progress is saved on this phone.</p>
   <ol id="timeline" class="timeline"></ol>
+</section>
+
+<section class="card" id="metro-card">
+  <h2>🚇 Nagoya Station → dorm by subway</h2>
+  <p class="small">Fare 430–470 JPY either way. Tap <strong>🚇 Metro</strong> on the map to see both routes drawn in the
+  real line colours. (With the two big bags on move-in day, the taxi below is easier — the subway is your everyday route.)</p>
+
+  <h3><span class="line-chip chip-red">RED</span> Plan A — Sakura-dōri Line</h3>
+  <ol class="metro-steps">
+    <li>At Nagoya Station find the <strong>Sakura-dōri Line</strong> (red). Board the train toward <strong>Tokushige (徳重)</strong>.</li>
+    <li>Ride ~5 min, get off at <strong>Hisaya-ōdōri (久屋大通)</strong>.</li>
+    <li>Change to the <strong>Meijō Line</strong> (purple) — clockwise (右回り), i.e. for <strong>Nagoya Dome-mae Yada</strong>.</li>
+    <li>Ride ~15 min, get off at <strong>Nagoya Dome-mae Yada (ナゴヤドーム前矢田)</strong>.</li>
+  </ol>
+
+  <h3><span class="line-chip chip-yellow">YELLOW</span> Plan B — Higashiyama Line</h3>
+  <ol class="metro-steps">
+    <li>At Nagoya Station find the <strong>Higashiyama Line</strong> (yellow). Board and ride ~5 min.</li>
+    <li>Get off at <strong>Sakae (栄)</strong>.</li>
+    <li>Change to the <strong>Meijō Line</strong> (purple) — clockwise (右回り), i.e. for <strong>Nagoya Dome-mae Yada</strong>.</li>
+    <li>Ride ~12 min, get off at <strong>Nagoya Dome-mae Yada (ナゴヤドーム前矢田)</strong>.</li>
+  </ol>
+
+  <h3><span class="line-chip chip-walk">WALK</span> Station → International Residence Daiko (~3 min)</h3>
+  <ol class="metro-steps">
+    <li>Take the <strong>elevator up to Entrance 1 (1番出口)</strong>.</li>
+    <li><strong>Turn right</strong> at the corner just outside the exit.</li>
+    <li>Walk straight ~3 min — <strong>International Residence Daiko is on your right</strong>.</li>
+  </ol>
 </section>
 
 <section class="card">

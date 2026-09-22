@@ -12,9 +12,33 @@ const WAYPOINTS = [
   { id: "dko",  name: "Int'l Residence Daiko 🏠", lngLat: [136.9351, 35.1790], kind: "home" },
 ];
 
-/* Flight legs get a great-circle arc; ground legs a straight line */
+/* Flight legs get a great-circle arc; ground legs a straight line.
+   Nagoya Station → Dome-mae Yada is drawn as the real subway lines below. */
 const FLIGHT_LEGS = [["hyd", "sin"], ["sin", "kix"]];
-const GROUND_LEGS = [["kix", "shin"], ["shin", "ngo"], ["ngo", "dyd"], ["dyd", "dko"]];
+const GROUND_LEGS = [["kix", "shin"], ["shin", "ngo"], ["dyd", "dko"]];
+
+/* Nagoya subway — both dorm routes, in the official line colours.
+   Plan A: Sakura-dōri Line (red) to Hisaya-ōdōri, then Meijō Line (purple).
+   Plan B: Higashiyama Line (yellow) to Sakae, then the same Meijō Line.
+   The purple polyline covers both: Sakae → Hisaya-ōdōri → clockwise → Dome-mae Yada. */
+const SUBWAY_LINES = [
+  { id: "sakuradori", color: "#dc2626", coords: [ // Nagoya → Kokusai Center → Marunouchi → Hisaya-ōdōri
+    [136.8816, 35.1709], [136.8919, 35.1731], [136.8993, 35.1747], [136.9082, 35.1734]] },
+  { id: "higashiyama", color: "#eab308", coords: [ // Nagoya → Fushimi → Sakae
+    [136.8816, 35.1709], [136.8983, 35.1682], [136.9077, 35.1699]] },
+  { id: "meijo", color: "#9333ea", coords: [ // Sakae → Hisaya-ōdōri → Shiyakusho → Meijō Kōen → Kurokawa → Shiga-hondōri → Heian-dōri → Ōzone → Dome-mae Yada
+    [136.9077, 35.1699], [136.9082, 35.1734], [136.9066, 35.1812], [136.9072, 35.1898],
+    [136.9105, 35.1943], [136.9168, 35.1950], [136.9243, 35.1943], [136.9375, 35.1907],
+    [136.9438, 35.1852]] },
+];
+
+/* Transfer stations get their own tap-for-info markers */
+const TRANSFERS = [
+  { lngLat: [136.9082, 35.1734], name: "Hisaya-ōdōri 久屋大通",
+    cap: "PLAN A transfer: get off the red Sakura-dōri Line here and switch to the purple Meijō Line — clockwise / “Nagoya Dome-mae Yada” direction (~15 min)." },
+  { lngLat: [136.9077, 35.1699], name: "Sakae 栄",
+    cap: "PLAN B transfer: get off the yellow Higashiyama Line here and switch to the purple Meijō Line — clockwise / “Nagoya Dome-mae Yada” direction (~12 min)." },
+];
 
 /* ---------------- Timeline (times carry their own UTC offset) ---------------- */
 const STEPS = [
@@ -70,8 +94,8 @@ const STEPS = [
   },
   {
     id: "last-leg", when: "Sat 26 Sep · afternoon", ts: "2026-09-26T13:15:00+09:00",
-    title: "Nagoya Station → dormitory",
-    desc: "EASIEST with 2 big bags: taxi (~20 min, show the Taxi Card below). Cheap option: Higashiyama line to Sakae → Meijo line to Nagoya Dome-mae Yada, then ~8 min walk.",
+    title: "Nagoya Station → dormitory (subway 430–470 JPY, or taxi)",
+    desc: "With 2 big bags a taxi is easiest (~20 min, show the Taxi Card below). Subway: PLAN A — red Sakura-dōri Line (toward Tokushige) ~5 min to Hisaya-ōdōri, change to purple Meijō Line (clockwise / “Nagoya Dome-mae Yada”) ~15 min. PLAN B — yellow Higashiyama Line ~5 min to Sakae, change to the same purple Meijō Line ~12 min. Both get off at Nagoya Dome-mae Yada → elevator to Entrance 1 → turn right at the corner → walk straight ~3 min. Full details in the 🚇 card below; tap 🚇 Metro on the map to see both routes drawn.",
   },
   {
     id: "movein", when: "Sat 26 Sep · 14:00–19:00 JST", ts: "2026-09-26T14:00:00+09:00",
@@ -203,7 +227,7 @@ const PHOTOS = {
   kix:  { src: `${WM}/5/56/%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF%E5%85%A8%E4%BD%93%E5%86%99%E7%9C%9F20220811.jpg/500px-%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF%E5%85%A8%E4%BD%93%E5%86%99%E7%9C%9F20220811.jpg`, cap: "Kansai Airport — an island in Osaka Bay. First Cabin is in Aeroplaza, 5 min covered walk from T1." },
   shin: { src: `${WM}/f/f1/IBA-Shinosaka-panoramic-view-2020.jpg/500px-IBA-Shinosaka-panoramic-view-2020.jpg`, cap: "Shin-Osaka Station — switch Haruka → Shinkansen here (NOT Osaka Station)" },
   ngo:  { src: `${WM}/7/7c/View_of_Nagoya_Station%2C_Tsubaki-cho_Nakamura_Ward_Nagoya_2022.jpg/500px-View_of_Nagoya_Station%2C_Tsubaki-cho_Nakamura_Ward_Nagoya_2022.jpg`, cap: "Nagoya Station — the twin towers. Taxi rank is outside; show the taxi card." },
-  dyd:  { src: `${WM}/7/7a/Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG/500px-Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG`, cap: "Nagoya Dome-mae Yada — your metro stop, ~8 min walk to the dorm" },
+  dyd:  { src: `${WM}/7/7a/Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG/500px-Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG`, cap: "Nagoya Dome-mae Yada — your metro stop. Elevator to Entrance 1, turn right at the corner, straight ~3 min to the dorm." },
   dko:  { src: `${WM}/f/f4/Nagoya_Dome_-_3.jpg/500px-Nagoya_Dome_-_3.jpg`, cap: "Vantelin (Nagoya) Dome — the giant landmark right next to your dorm. Room 333 awaits 🎉" },
 };
 
@@ -278,6 +302,14 @@ function styleReady() {
     map.addSource("ground", { type: "geojson", data: ground });
     map.addLayer({ id: "flight-line", type: "line", source: "flight", paint: { "line-color": "#2563eb", "line-width": 2.5, "line-dasharray": [1.5, 1.5] } });
     map.addLayer({ id: "ground-line", type: "line", source: "ground", paint: { "line-color": "#d97706", "line-width": 3 } });
+    for (const l of SUBWAY_LINES) {
+      map.addSource(l.id, { type: "geojson", data: { type: "Feature", geometry: { type: "LineString", coordinates: l.coords } } });
+      map.addLayer({
+        id: `${l.id}-line`, type: "line", source: l.id,
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": l.color, "line-width": 4, "line-opacity": 0.9 },
+      });
+    }
   }
 }
 map.on("style.load", styleReady);
@@ -297,7 +329,24 @@ for (const w of WAYPOINTS) {
     .addTo(map);
 }
 
+/* transfer-station markers (small, tap for which line to change to) */
+for (const t of TRANSFERS) {
+  const el = document.createElement("div");
+  el.textContent = "🔄";
+  el.style.fontSize = "15px";
+  new maplibregl.Marker({ element: el })
+    .setLngLat(t.lngLat)
+    .setPopup(new maplibregl.Popup({ offset: 14, maxWidth: "260px" })
+      .setHTML(`<div class="poi-pop"><div class="poi-name">${t.name}</div><div class="poi-cap">${t.cap}</div></div>`))
+    .addTo(map);
+}
+
 map.on("load", () => map.fitBounds(ROUTE_BOUNDS, { padding: 60, duration: 0 }));
+
+/* zoom to the Nagoya Station → dorm subway section */
+document.getElementById("btn-metro").addEventListener("click", () =>
+  map.fitBounds([[136.874, 35.161], [136.951, 35.201]], { padding: 40 })
+);
 
 /* pre-load the waypoint photos so they're cached for offline use */
 window.addEventListener("load", () => setTimeout(() => {
