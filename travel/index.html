@@ -43,6 +43,7 @@
     <button id="btn-route" class="map-btn" title="Zoom to full route">🗺️ Route</button>
     <button id="btn-sat" class="map-btn" title="Toggle satellite view">🛰️ Satellite</button>
     <button id="btn-metro" class="map-btn" title="Zoom to the Nagoya subway route to the dorm">🚇 Metro</button>
+    <button id="btn-play" class="map-btn" title="Animate the whole journey along the track">▶ Play trip</button>
   </div>
   <div id="geo-status" class="geo-status"></div>
 </section>
@@ -55,6 +56,15 @@
   Boarding without that reservation = <strong>1,000&nbsp;JPY penalty</strong> on the train.</p>
   <p class="small">Also: student fare = 40&nbsp;kg check-in + 7&nbsp;kg cabin, but only if you show passport,
   student visa and the university acceptance letter at HYD check-in.</p>
+</section>
+
+<section class="card" id="flight-card">
+  <h2>✈️ Live journey &amp; flight tracker</h2>
+  <div id="journey-now" class="journey-now">loading…</div>
+  <div id="flight-list"></div>
+  <p class="small">Statuses are computed live from your booked schedule, so they work even with no internet.
+  <strong>📡 Live map</strong> opens the real aircraft position on Flightradar24 (needs internet). The pulsing
+  marker on the map above moves along the track in real time as your journey happens.</p>
 </section>
 
 <section class="card">
@@ -90,6 +100,30 @@
     <li><strong>Turn right</strong> at the corner just outside the exit.</li>
     <li>Walk straight ~3 min — <strong>International Residence Daiko is on your right</strong>.</li>
   </ol>
+</section>
+
+<section class="card" id="train-card">
+  <h2>🚄 My train tickets — live status</h2>
+  <p class="small">When you buy a ticket, add it here — the card then shows a live countdown →
+  <strong>board soon</strong> → <strong>en route</strong> → <strong>arrived</strong>, updating by itself.
+  All times are Japan time (JST). Saved only on this device. For live delays and platform numbers use the
+  Navitime link in Quick links.</p>
+  <div id="ticket-list"></div>
+  <button id="btn-tk-planned" class="big-btn" style="margin-top:10px">⚡ Pre-load my planned trains (Sat 26 Sep)</button>
+  <details id="tk-details" class="tk-form">
+    <summary>➕ Add a ticket by hand</summary>
+    <div class="tk-grid">
+      <input id="tk-name" placeholder="Train (e.g. Haruka 30)">
+      <input id="tk-seat" placeholder="Car / seat (e.g. Car 5, 12A)">
+      <input id="tk-from" placeholder="From (e.g. Kansai Airport)">
+      <input id="tk-to" placeholder="To (e.g. Shin-Osaka)">
+      <label>Date<input id="tk-date" type="date" value="2026-09-26"></label>
+      <span></span>
+      <label>Departs (JST)<input id="tk-dep" type="time"></label>
+      <label>Arrives (JST)<input id="tk-arr" type="time"></label>
+    </div>
+    <button id="tk-save" class="big-btn" type="button" style="margin-top:10px">💾 Save ticket</button>
+  </details>
 </section>
 
 <section class="card">

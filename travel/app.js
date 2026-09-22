@@ -350,6 +350,248 @@ document.getElementById("btn-metro").addEventListener("click", () =>
   map.fitBounds([[136.874, 35.161], [136.951, 35.201]], { padding: 40 })
 );
 
+/* ================= Live journey tracker + trip animation =================
+   A pulsing marker moves along the drawn track in real time, following the
+   booked schedule. ▶ Play trip animates the whole route in ~25 seconds. */
+const fmtDur = ms => {
+  ms = Math.max(0, ms);
+  let h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h >= 24) { const d = Math.floor(h / 24); h %= 24; return `${d}d ${h}h ${String(m).padStart(2, "0")}m`; }
+  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+};
+
+const FLIGHTS = [
+  { no: "SQ 523", seat: "43A", from: "Hyderabad HYD", to: "Singapore SIN",
+    dep: "2026-09-24T23:15:00+05:30", arr: "2026-09-25T06:40:00+08:00",
+    depLocal: "24 Sep 23:15 IST", arrLocal: "06:40 SGT",
+    fr24: "https://www.flightradar24.com/data/flights/sq523" },
+  { no: "SQ 622", seat: "45A", from: "Singapore SIN (T2)", to: "Osaka KIX",
+    dep: "2026-09-25T14:10:00+08:00", arr: "2026-09-25T21:35:00+09:00",
+    depLocal: "25 Sep 14:10 SGT", arrLocal: "21:35 JST",
+    fr24: "https://www.flightradar24.com/data/flights/sq622" },
+];
+
+/* the drawn subway Plan A: red line to Hisaya-ōdōri, then purple to Dome-mae Yada */
+const PLAN_A_PATH = [...SUBWAY_LINES[0].coords, ...SUBWAY_LINES[2].coords.slice(2)];
+
+/* every stage of the trip: real start/end time, the path on the map,
+   marker icon, camera zoom, and how long it lasts in the ▶ Play animation */
+const SEG = (t0, t1, path, icon, label, z, pv) =>
+  ({ t0: +new Date(t0), t1: +new Date(t1), path, icon, label, z, pv });
+const SEGMENTS = [
+  SEG("2026-09-24T23:15:00+05:30", "2026-09-25T06:40:00+08:00", greatCircle(byId("hyd").lngLat, byId("sin").lngLat), "✈️", "SQ 523 — flying to Singapore", 4, 6000),
+  SEG("2026-09-25T06:40:00+08:00", "2026-09-25T14:10:00+08:00", [byId("sin").lngLat, byId("sin").lngLat], "🧳", "Changi layover — go to Terminal 2, rest (no immigration)", 9, 800),
+  SEG("2026-09-25T14:10:00+08:00", "2026-09-25T21:35:00+09:00", greatCircle(byId("sin").lngLat, byId("kix").lngLat), "✈️", "SQ 622 — flying to Osaka KIX", 4, 6000),
+  SEG("2026-09-25T21:35:00+09:00", "2026-09-26T10:45:00+09:00", [byId("kix").lngLat, byId("kix").lngLat], "🏨", "KIX — immigration, residence card, First Cabin hotel", 10, 800),
+  SEG("2026-09-26T10:45:00+09:00", "2026-09-26T11:35:00+09:00", [byId("kix").lngLat, byId("shin").lngLat], "🚄", "JR Haruka — KIX → Shin-Osaka", 9, 2500),
+  SEG("2026-09-26T11:35:00+09:00", "2026-09-26T12:00:00+09:00", [byId("shin").lngLat, byId("shin").lngLat], "🚉", "Shin-Osaka — change to the Shinkansen", 12, 600),
+  SEG("2026-09-26T12:00:00+09:00", "2026-09-26T12:50:00+09:00", [byId("shin").lngLat, byId("ngo").lngLat], "🚄", "Tokaido Shinkansen — Shin-Osaka → Nagoya", 8, 2500),
+  SEG("2026-09-26T12:50:00+09:00", "2026-09-26T13:15:00+09:00", [byId("ngo").lngLat, byId("ngo").lngLat], "🚉", "Nagoya Station — find the subway (or taxi rank)", 13, 600),
+  SEG("2026-09-26T13:15:00+09:00", "2026-09-26T13:40:00+09:00", PLAN_A_PATH, "🚇", "Subway Plan A — to Nagoya Dome-mae Yada", 12, 2500),
+  SEG("2026-09-26T13:40:00+09:00", "2026-09-26T13:50:00+09:00", [byId("dyd").lngLat, byId("dko").lngLat], "🚶", "Walk — Entrance 1, turn right, ~3 min to the dorm", 14.5, 1500),
+];
+
+/* fraction 0–1 → point along a polyline, measured by real distance */
+function pointAlong(seg, f) {
+  const p = seg.path;
+  if (p.length < 2 || f <= 0) return p[0];
+  if (f >= 1) return p[p.length - 1];
+  if (!seg.cum) {
+    seg.cum = [0];
+    for (let i = 1; i < p.length; i++) {
+      const dx = (p[i][0] - p[i - 1][0]) * Math.cos(p[i][1] * Math.PI / 180);
+      const dy = p[i][1] - p[i - 1][1];
+      seg.cum.push(seg.cum[i - 1] + Math.hypot(dx, dy));
+    }
+  }
+  const total = seg.cum[seg.cum.length - 1];
+  if (!total) return p[0];
+  const target = f * total;
+  let i = 1;
+  while (seg.cum[i] < target) i++;
+  const g = (target - seg.cum[i - 1]) / (seg.cum[i] - seg.cum[i - 1]);
+  return [p[i - 1][0] + (p[i][0] - p[i - 1][0]) * g, p[i - 1][1] + (p[i][1] - p[i - 1][1]) * g];
+}
+
+const jEl = document.createElement("div");
+jEl.className = "journey-marker";
+jEl.textContent = "🧳";
+const journeyMarker = new maplibregl.Marker({ element: jEl })
+  .setLngLat(byId("hyd").lngLat).addTo(map);
+
+function journeyNow(now = Date.now()) {
+  if (now < SEGMENTS[0].t0) return { seg: null, pos: byId("hyd").lngLat, icon: "🧳",
+    text: `🧳 Journey starts 24 Sep 23:15 IST — in ${fmtDur(SEGMENTS[0].t0 - now)}` };
+  for (const s of SEGMENTS) {
+    if (now < s.t1) {
+      const f = Math.max(0, (now - s.t0) / (s.t1 - s.t0));
+      return { seg: s, f, pos: pointAlong(s, f), icon: s.icon,
+        text: `${s.icon} ${s.label} · ${Math.round(f * 100)}% · ${fmtDur(s.t1 - now)} to go` };
+    }
+  }
+  return { seg: null, pos: byId("dko").lngLat, icon: "🏠", text: "🎉 Arrived — International Residence Daiko, Room 333" };
+}
+
+let previewing = false;
+function liveJourneyTick() {
+  const j = journeyNow();
+  if (!previewing) {
+    jEl.textContent = j.icon;
+    journeyMarker.setLngLat(j.pos);
+  }
+  document.getElementById("journey-now").innerHTML =
+    `${j.text}<div class="small">tap here to see the marker on the map · it moves along the track in real time</div>`;
+}
+document.getElementById("journey-now").addEventListener("click", () => {
+  const j = journeyNow();
+  map.flyTo({ center: j.pos, zoom: j.seg ? j.seg.z : 10 });
+});
+setInterval(liveJourneyTick, 1000);
+liveJourneyTick();
+
+/* flight status rows — computed from the booked schedule, so they work offline */
+function flightRows() {
+  const box = document.getElementById("flight-list");
+  box.innerHTML = "";
+  const now = Date.now();
+  for (const fl of FLIGHTS) {
+    const dep = +new Date(fl.dep), arr = +new Date(fl.arr);
+    let cls, txt;
+    if (now < dep - 3600000) { cls = "st-soon"; txt = `Departs in ${fmtDur(dep - now)}`; }
+    else if (now < dep) { cls = "st-board"; txt = `🔔 BOARDING SOON — ${fmtDur(dep - now)}`; }
+    else if (now < arr) { cls = "st-air"; txt = `✈️ In the air ${Math.round(100 * (now - dep) / (arr - dep))}% · lands in ${fmtDur(arr - now)}`; }
+    else { cls = "st-done"; txt = "Landed ✅"; }
+    const row = document.createElement("div");
+    row.className = "flight-row";
+    row.innerHTML = `
+      <div class="f-main"><div class="f-no">${fl.no} · seat ${fl.seat}</div>
+        <div class="small">${fl.from} ${fl.depLocal} → ${fl.to} ${fl.arrLocal}</div></div>
+      <span class="status-chip ${cls}">${txt}</span>
+      <a class="f-live" href="${fl.fr24}" target="_blank" rel="noopener">📡 Live map</a>`;
+    box.appendChild(row);
+  }
+}
+flightRows();
+setInterval(flightRows, 30000);
+
+/* ▶ Play trip — fly the marker along the whole route with the camera following */
+const btnPlay = document.getElementById("btn-play");
+const PV_TOTAL = SEGMENTS.reduce((s, x) => s + x.pv, 0);
+let animRAF = null;
+function stopPreview() {
+  cancelAnimationFrame(animRAF);
+  animRAF = null;
+  previewing = false;
+  btnPlay.classList.remove("active");
+  btnPlay.textContent = "▶ Play trip";
+  liveJourneyTick();
+  map.fitBounds(ROUTE_BOUNDS, { padding: 60 });
+}
+btnPlay.addEventListener("click", () => {
+  if (animRAF) { stopPreview(); return; }
+  previewing = true;
+  btnPlay.classList.add("active");
+  btnPlay.textContent = "⏹ Stop";
+  const start = performance.now();
+  let zoom = map.getZoom();
+  const frame = t => {
+    const elapsed = t - start;
+    if (elapsed >= PV_TOTAL) { stopPreview(); return; }
+    let acc = 0, seg = SEGMENTS[SEGMENTS.length - 1], f = 1;
+    for (const s of SEGMENTS) {
+      if (elapsed < acc + s.pv) { seg = s; f = (elapsed - acc) / s.pv; break; }
+      acc += s.pv;
+    }
+    const pos = pointAlong(seg, f);
+    jEl.textContent = seg.icon;
+    journeyMarker.setLngLat(pos);
+    zoom += (seg.z - zoom) * 0.06; // smooth zoom toward each stage's level
+    map.jumpTo({ center: pos, zoom });
+    animRAF = requestAnimationFrame(frame);
+  };
+  animRAF = requestAnimationFrame(frame);
+});
+
+/* ================= My train tickets — live status (saved on this device) ================= */
+const TK_KEY = "train-tickets";
+const getTickets = () => { try { return JSON.parse(localStorage.getItem(TK_KEY)) || []; } catch { return []; } };
+const setTickets = t => localStorage.setItem(TK_KEY, JSON.stringify(t));
+
+function ticketStatus(tk) {
+  const dep = +new Date(`${tk.date}T${tk.dep}:00+09:00`);
+  const arr = +new Date(`${tk.date}T${tk.arr}:00+09:00`);
+  const now = Date.now();
+  if (isNaN(dep) || isNaN(arr)) return { cls: "st-soon", txt: "check the times" };
+  if (now < dep - 3600000) return { cls: "st-soon", txt: `Departs in ${fmtDur(dep - now)}` };
+  if (now < dep) return { cls: "st-board", txt: `🔔 BOARD SOON — ${fmtDur(dep - now)}` };
+  if (now < arr) return { cls: "st-air", txt: `🚄 En route ${Math.round(100 * (now - dep) / (arr - dep))}% · ${fmtDur(arr - now)} left` };
+  return { cls: "st-done", txt: "Arrived ✅" };
+}
+
+function renderTickets() {
+  const box = document.getElementById("ticket-list");
+  box.innerHTML = "";
+  const list = getTickets();
+  if (!list.length) {
+    const p = document.createElement("p");
+    p.className = "small";
+    p.textContent = "No tickets yet. When you buy the Haruka + Shinkansen at the KIX JR office (Sat 26 Sep), add them here — or pre-load the planned times below and edit later.";
+    box.appendChild(p);
+  }
+  list.forEach((tk, i) => {
+    const st = ticketStatus(tk);
+    const div = document.createElement("div");
+    div.className = "ticket";
+    const main = document.createElement("div");
+    main.className = "f-main";
+    const t1 = document.createElement("div");
+    t1.className = "f-no";
+    t1.textContent = `🚄 ${tk.name}`;
+    const t2 = document.createElement("div");
+    t2.className = "small";
+    t2.textContent = `${tk.from} ${tk.dep} → ${tk.to} ${tk.arr} JST · ${tk.date}` + (tk.seat ? ` · ${tk.seat}` : "");
+    main.append(t1, t2);
+    const chip = document.createElement("span");
+    chip.className = `status-chip ${st.cls}`;
+    chip.textContent = st.txt;
+    const del = document.createElement("button");
+    del.className = "tk-del";
+    del.textContent = "🗑";
+    del.title = "Remove this ticket";
+    del.onclick = () => {
+      if (!confirm(`Remove “${tk.name}”?`)) return;
+      const l = getTickets(); l.splice(i, 1); setTickets(l); renderTickets();
+    };
+    div.append(main, chip, del);
+    box.appendChild(div);
+  });
+}
+renderTickets();
+setInterval(renderTickets, 30000);
+
+document.getElementById("btn-tk-planned").addEventListener("click", () => {
+  const l = getTickets();
+  l.push(
+    { name: "JR Haruka (planned — edit after booking)", from: "Kansai Airport", to: "Shin-Osaka", date: "2026-09-26", dep: "10:45", arr: "11:35", seat: "" },
+    { name: "Tokaido Shinkansen (planned)", from: "Shin-Osaka", to: "Nagoya", date: "2026-09-26", dep: "12:00", arr: "12:50", seat: "oversized-baggage seat" }
+  );
+  setTickets(l);
+  renderTickets();
+});
+
+document.getElementById("tk-save").addEventListener("click", () => {
+  const v = id => document.getElementById(id).value.trim();
+  const tk = { name: v("tk-name"), from: v("tk-from"), to: v("tk-to"), date: v("tk-date"), dep: v("tk-dep"), arr: v("tk-arr"), seat: v("tk-seat") };
+  if (!tk.name || !tk.date || !tk.dep || !tk.arr) { alert("Please fill at least: train name, date, departure time and arrival time."); return; }
+  const l = getTickets();
+  l.push(tk);
+  setTickets(l);
+  renderTickets();
+  ["tk-name", "tk-from", "tk-to", "tk-dep", "tk-arr", "tk-seat"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("tk-details").open = false;
+});
+
 /* pre-load the waypoint photos so they're cached for offline use */
 window.addEventListener("load", () => setTimeout(() => {
   for (const p of Object.values(PHOTOS)) new Image().src = p.src;
