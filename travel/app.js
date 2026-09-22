@@ -574,7 +574,12 @@ async function deriveKey(pw, salt) {
     base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
   );
 }
-const b64 = u8 => btoa(String.fromCharCode(...u8));
+/* chunked — spreading a multi-MB array into fromCharCode blows the call stack */
+const b64 = u8 => {
+  let s = "";
+  for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return btoa(s);
+};
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
 document.getElementById("btn-vault-export").addEventListener("click", async () => {
@@ -591,17 +596,21 @@ document.getElementById("btn-vault-export").addEventListener("click", async () =
     if (n) notes[slot.id] = n;
   }
   if (!docs.length && !Object.keys(notes).length) { alert("Vault is empty — nothing to back up."); return; }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(pw, salt);
-  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify({ docs, notes })));
-  const pkg = JSON.stringify({ v: 2, stamp: new Date().toISOString(), salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([pkg], { type: "application/json" }));
-  a.download = "nagoya-vault-backup.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-  alert(`Backed up ${docs.length} document(s) as an ENCRYPTED file.\nSend it to your other device (Drive / email / cable), open the app there, and tap Restore.`);
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(pw, salt);
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify({ docs, notes })));
+    const pkg = JSON.stringify({ v: 2, stamp: new Date().toISOString(), salt: b64(salt), iv: b64(iv), ct: b64(new Uint8Array(ct)) });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([pkg], { type: "application/json" }));
+    a.download = "nagoya-vault-backup.json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    alert(`✅ Backed up ${docs.length} document(s) as an ENCRYPTED file — check your Downloads folder for nagoya-vault-backup.json.`);
+  } catch (err) {
+    alert("❌ Backup failed: " + (err && err.message ? err.message : err));
+  }
 });
 
 document.getElementById("btn-vault-import").addEventListener("click", () => {
