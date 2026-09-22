@@ -24,6 +24,11 @@ const STEPS = [
     desc: "Email passport + student visa to student.documents@makemytrip.com. Pack in hand: passport, visa, university acceptance letter, admission docs. Show them at HYD check-in or the 40 kg student baggage can be refused. Enrol in KrisFlyer for free extra benefits.",
   },
   {
+    id: "dorm-reply", when: "Wed 23 Sep — do TODAY", ts: "2026-09-23T20:00:00+05:30", warn: true,
+    title: "Reply to the dorm email + book First Cabin + get cash",
+    desc: "1) REPLY to ITO Kanako's email (ito.kanako.d8@mail.f.thers.ac.jp): move-in 26 Sep, arrival ~14:00, bedding rental yes/no (¥1,650/mo — the room has NO pillow/comforter/sheets). The dorm REQUIRES advance contact. 2) BOOK First Cabin KIX for the night of 25 Sep. 3) Carry ¥60,000–100,000 cash (first dorm bill: Sep rent ¥25,000 unprorated + ¥15,000 restoration + Wi-Fi + utilities; Yucho card takes ~1 week). 4) Consider a Japan eSIM bought in India. 5) Search your inbox for ITO-san's follow-up emails (dorm password; orientation details).",
+  },
+  {
     id: "dep-hyd", when: "Thu 24 Sep · 23:15 IST", ts: "2026-09-24T23:15:00+05:30",
     title: "Depart Hyderabad — SQ 523, seat 43A",
     desc: "Rajiv Gandhi Intl. PNR E7T7RU · e-ticket 2481322049. Cabin bag max 7 kg (1 piece).",
@@ -70,8 +75,13 @@ const STEPS = [
   },
   {
     id: "movein", when: "Sat 26 Sep · 14:00–19:00 JST", ts: "2026-09-26T14:00:00+09:00",
-    title: "Move in — International Residence Daiko 🎉",
-    desc: "1-1-18 Daiko-Minami, Higashi-ku. Move-in reception 14:00–19:00 only.",
+    title: "Move in — International Residence Daiko 🎉 (Room 333)",
+    desc: "1-1-18 Daiko-Minami, Higashi-ku. Move-in reception 14:00–19:00 only (weekends OK). Note: visitors are not allowed inside, not even family.",
+  },
+  {
+    id: "big-monday", when: "Mon 28 Sep · from 08:45 JST", ts: "2026-09-28T08:45:00+09:00", warn: true,
+    title: "THE BIG MONDAY — ward office, orientation 10:30, bank account",
+    desc: "08:45 Higashi Ward Office (1-7-74 Tsutsui): register address, get it written on your residence card. 10:30 NEW-STUDENT ORIENTATION at the Graduate School of Informatics (strongly encouraged — be there). Then: collect the 'Certificate of Admission' from Student Affairs (NOT the acceptance letter), and do the Yucho bank app at the support session, International Center 2F Rm 206, 13:00–16:00. Today is the JASSO bank-application deadline. Hand over your packet originals if you carried them.",
   },
 ];
 

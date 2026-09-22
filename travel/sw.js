@@ -1,5 +1,5 @@
 /* Nagoya Journey — offline support */
-const SHELL_CACHE = "shell-v1";
+const SHELL_CACHE = "shell-v2";
 const TILE_CACHE = "tiles-v1";
 const SHELL = [
   "./",
