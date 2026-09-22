@@ -1,6 +1,6 @@
 /* Nagoya Journey — offline support */
-const SHELL_CACHE = "shell-v2";
-const TILE_CACHE = "tiles-v1";
+const SHELL_CACHE = "shell-v3";
+const TILE_CACHE = "tiles-v2";
 const SHELL = [
   "./",
   "index.html",
@@ -37,8 +37,9 @@ async function trimCache(name, max) {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
 
-  // map tiles: cache-first, capped — whatever you viewed online stays viewable offline
-  if (url.hostname === "tile.openstreetmap.org") {
+  // map data (style, fonts, sprites, vector tiles): cache-first, capped —
+  // whatever you viewed online stays viewable offline
+  if (url.hostname === "tiles.openfreemap.org") {
     e.respondWith(
       caches.open(TILE_CACHE).then(async cache => {
         const hit = await cache.match(e.request);
@@ -47,7 +48,7 @@ self.addEventListener("fetch", e => {
           const resp = await fetch(e.request);
           if (resp.ok) {
             cache.put(e.request, resp.clone());
-            trimCache(TILE_CACHE, 800);
+            trimCache(TILE_CACHE, 1200);
           }
           return resp;
         } catch {

@@ -185,21 +185,7 @@ function greatCircle(a, b, n = 64) {
 
 const map = new maplibregl.Map({
   container: "map",
-  style: {
-    version: 8,
-    sources: {
-      osm: {
-        type: "raster",
-        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-        tileSize: 256,
-        attribution: "© OpenStreetMap contributors",
-      },
-    },
-    layers: [
-      { id: "bg", type: "background", paint: { "background-color": "#0a0d16" } },
-      { id: "osm", type: "raster", source: "osm", paint: { "raster-brightness-max": 0.75, "raster-contrast": 0.15, "raster-saturation": -0.35 } },
-    ],
-  },
+  style: "https://tiles.openfreemap.org/styles/dark",
   center: [110, 22],
   zoom: 2.6,
   attributionControl: { compact: true },
@@ -211,6 +197,23 @@ const ROUTE_BOUNDS = WAYPOINTS.reduce(
 );
 
 map.on("load", () => {
+  // Bilingual labels: English (or romaji) on top, local Japanese underneath.
+  // Skip when both are identical so non-Japanese places aren't printed twice.
+  const en = ["coalesce", ["get", "name:en"], ["get", "name:latin"], ["get", "name"]];
+  const bilingual = [
+    "case",
+    ["==", en, ["get", "name"]],
+    ["get", "name"],
+    ["format", en, {}, "\n", {}, ["get", "name"], { "font-scale": 0.85 }],
+  ];
+  for (const layer of map.getStyle().layers) {
+    if (layer.type !== "symbol") continue;
+    const tf = map.getLayoutProperty(layer.id, "text-field");
+    if (tf && JSON.stringify(tf).includes("name")) {
+      map.setLayoutProperty(layer.id, "text-field", bilingual);
+    }
+  }
+
   const flight = { type: "Feature", geometry: { type: "MultiLineString", coordinates: FLIGHT_LEGS.map(([a, b]) => greatCircle(byId(a).lngLat, byId(b).lngLat)) } };
   const ground = { type: "Feature", geometry: { type: "MultiLineString", coordinates: GROUND_LEGS.map(([a, b]) => [byId(a).lngLat, byId(b).lngLat]) } };
   map.addSource("flight", { type: "geojson", data: flight });
