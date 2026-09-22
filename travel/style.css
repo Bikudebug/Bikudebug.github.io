@@ -159,3 +159,22 @@ main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
 .taxi-overlay .big-btn { background: #111; color: #fff; border: none; margin-top: 10px; }
 
 .maplibregl-ctrl-attrib { font-size: 10px; }
+
+/* waypoint photo popups */
+.poi-pop { max-width: 260px; }
+.poi-pop img { width: 100%; border-radius: 8px; display: block; margin-bottom: 6px; }
+.poi-name { font-weight: 700; font-size: 14px; color: #111; }
+.poi-cap { font-size: 12px; color: #444; margin-top: 2px; line-height: 1.35; }
+.maplibregl-popup-content { border-radius: 10px; padding: 10px; }
+
+/* adapt to any screen: phones keep the single column; wide screens get a
+   full-width map and two columns of cards */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+@media (min-width: 900px) {
+  main { max-width: 1160px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; align-items: start; }
+  #map-section { grid-column: 1 / -1; margin: 12px 0 0; border-radius: 16px; overflow: hidden; }
+  #map { height: 54vh; }
+  .map-buttons { left: auto; min-width: 420px; }
+  .footer { grid-column: 1 / -1; }
+}

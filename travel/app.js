@@ -166,6 +166,18 @@ document.getElementById("btn-taxi-close").addEventListener("click", () => {
 /* ================= Map ================= */
 const byId = id => WAYPOINTS.find(w => w.id === id);
 
+/* Photos shown when you tap a waypoint (Wikimedia Commons, cached for offline) */
+const WM = "https://upload.wikimedia.org/wikipedia/commons/thumb";
+const PHOTOS = {
+  hyd:  { src: `${WM}/f/f6/Hyderabad_newairport.jpg/500px-Hyderabad_newairport.jpg`, cap: "Rajiv Gandhi Intl — departure terminal" },
+  sin:  { src: `${WM}/e/e9/JewelSingaporeVortex1.jpg/500px-JewelSingaporeVortex1.jpg`, cap: "Changi's Jewel waterfall (landside — skip unless sure). You transit to Terminal 2." },
+  kix:  { src: `${WM}/5/56/%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF%E5%85%A8%E4%BD%93%E5%86%99%E7%9C%9F20220811.jpg/500px-%E9%96%A2%E8%A5%BF%E5%9B%BD%E9%9A%9B%E7%A9%BA%E6%B8%AF%E5%85%A8%E4%BD%93%E5%86%99%E7%9C%9F20220811.jpg`, cap: "Kansai Airport — an island in Osaka Bay. First Cabin is in Aeroplaza, 5 min covered walk from T1." },
+  shin: { src: `${WM}/f/f1/IBA-Shinosaka-panoramic-view-2020.jpg/500px-IBA-Shinosaka-panoramic-view-2020.jpg`, cap: "Shin-Osaka Station — switch Haruka → Shinkansen here (NOT Osaka Station)" },
+  ngo:  { src: `${WM}/7/7c/View_of_Nagoya_Station%2C_Tsubaki-cho_Nakamura_Ward_Nagoya_2022.jpg/500px-View_of_Nagoya_Station%2C_Tsubaki-cho_Nakamura_Ward_Nagoya_2022.jpg`, cap: "Nagoya Station — the twin towers. Taxi rank is outside; show the taxi card." },
+  dyd:  { src: `${WM}/7/7a/Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG/500px-Yutorito_Line_Nagoya_Dome-mae_Yada_station.JPG`, cap: "Nagoya Dome-mae Yada — your metro stop, ~8 min walk to the dorm" },
+  dko:  { src: `${WM}/f/f4/Nagoya_Dome_-_3.jpg/500px-Nagoya_Dome_-_3.jpg`, cap: "Vantelin (Nagoya) Dome — the giant landmark right next to your dorm. Room 333 awaits 🎉" },
+};
+
 function greatCircle(a, b, n = 64) {
   // simple spherical interpolation between [lng,lat] points
   const rad = d => d * Math.PI / 180, deg = r => r * 180 / Math.PI;
@@ -183,9 +195,24 @@ function greatCircle(a, b, n = 64) {
   return pts;
 }
 
+/* Normal street map (with English+Japanese labels) and a satellite view */
+const STREET_STYLE = "https://tiles.openfreemap.org/styles/bright";
+const SAT_STYLE = {
+  version: 8,
+  sources: {
+    sat: {
+      type: "raster",
+      tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    },
+  },
+  layers: [{ id: "sat", type: "raster", source: "sat" }],
+};
+
 const map = new maplibregl.Map({
   container: "map",
-  style: "https://tiles.openfreemap.org/styles/dark",
+  style: STREET_STYLE,
   center: [110, 22],
   zoom: 2.6,
   attributionControl: { compact: true },
@@ -196,7 +223,8 @@ const ROUTE_BOUNDS = WAYPOINTS.reduce(
   new maplibregl.LngLatBounds(WAYPOINTS[0].lngLat, WAYPOINTS[0].lngLat)
 );
 
-map.on("load", () => {
+/* Re-applied every time the style changes (street ⇄ satellite) */
+function styleReady() {
   // Bilingual labels: English (or romaji) on top, local Japanese underneath.
   // Skip when both are identical so non-Japanese places aren't printed twice.
   const en = ["coalesce", ["get", "name:en"], ["get", "name:latin"], ["get", "name"]];
@@ -214,23 +242,45 @@ map.on("load", () => {
     }
   }
 
-  const flight = { type: "Feature", geometry: { type: "MultiLineString", coordinates: FLIGHT_LEGS.map(([a, b]) => greatCircle(byId(a).lngLat, byId(b).lngLat)) } };
-  const ground = { type: "Feature", geometry: { type: "MultiLineString", coordinates: GROUND_LEGS.map(([a, b]) => [byId(a).lngLat, byId(b).lngLat]) } };
-  map.addSource("flight", { type: "geojson", data: flight });
-  map.addSource("ground", { type: "geojson", data: ground });
-  map.addLayer({ id: "flight-line", type: "line", source: "flight", paint: { "line-color": "#60a5fa", "line-width": 2.5, "line-dasharray": [1.5, 1.5] } });
-  map.addLayer({ id: "ground-line", type: "line", source: "ground", paint: { "line-color": "#f59e0b", "line-width": 3 } });
-
-  for (const w of WAYPOINTS) {
-    const el = document.createElement("div");
-    el.textContent = w.kind === "air" ? "✈️" : w.kind === "home" ? "🏠" : "🚉";
-    el.style.fontSize = "20px";
-    new maplibregl.Marker({ element: el })
-      .setLngLat(w.lngLat)
-      .setPopup(new maplibregl.Popup({ offset: 18 }).setText(w.name))
-      .addTo(map);
+  if (!map.getSource("flight")) {
+    const flight = { type: "Feature", geometry: { type: "MultiLineString", coordinates: FLIGHT_LEGS.map(([a, b]) => greatCircle(byId(a).lngLat, byId(b).lngLat)) } };
+    const ground = { type: "Feature", geometry: { type: "MultiLineString", coordinates: GROUND_LEGS.map(([a, b]) => [byId(a).lngLat, byId(b).lngLat]) } };
+    map.addSource("flight", { type: "geojson", data: flight });
+    map.addSource("ground", { type: "geojson", data: ground });
+    map.addLayer({ id: "flight-line", type: "line", source: "flight", paint: { "line-color": "#2563eb", "line-width": 2.5, "line-dasharray": [1.5, 1.5] } });
+    map.addLayer({ id: "ground-line", type: "line", source: "ground", paint: { "line-color": "#d97706", "line-width": 3 } });
   }
-  map.fitBounds(ROUTE_BOUNDS, { padding: 60, duration: 0 });
+}
+map.on("style.load", styleReady);
+
+/* Markers with photo popups — added once; they survive style switches */
+for (const w of WAYPOINTS) {
+  const el = document.createElement("div");
+  el.textContent = w.kind === "air" ? "✈️" : w.kind === "home" ? "🏠" : "🚉";
+  el.style.fontSize = "20px";
+  const p = PHOTOS[w.id];
+  const html = p
+    ? `<div class="poi-pop"><img src="${p.src}" alt="${w.name}" loading="lazy"><div class="poi-name">${w.name}</div><div class="poi-cap">${p.cap}</div></div>`
+    : `<div class="poi-pop"><div class="poi-name">${w.name}</div></div>`;
+  new maplibregl.Marker({ element: el })
+    .setLngLat(w.lngLat)
+    .setPopup(new maplibregl.Popup({ offset: 18, maxWidth: "280px" }).setHTML(html))
+    .addTo(map);
+}
+
+map.on("load", () => map.fitBounds(ROUTE_BOUNDS, { padding: 60, duration: 0 }));
+
+/* pre-load the waypoint photos so they're cached for offline use */
+window.addEventListener("load", () => setTimeout(() => {
+  for (const p of Object.values(PHOTOS)) new Image().src = p.src;
+}, 4000));
+
+/* satellite toggle */
+let satOn = false;
+document.getElementById("btn-sat").addEventListener("click", e => {
+  satOn = !satOn;
+  e.currentTarget.classList.toggle("active", satOn);
+  map.setStyle(satOn ? SAT_STYLE : STREET_STYLE);
 });
 
 document.getElementById("btn-route").addEventListener("click", () =>

@@ -1,6 +1,9 @@
 /* Nagoya Journey — offline support */
-const SHELL_CACHE = "shell-v3";
+const SHELL_CACHE = "shell-v4";
 const TILE_CACHE = "tiles-v2";
+
+/* remote map/photo hosts whose responses are cached for offline use */
+const MAP_HOSTS = ["tiles.openfreemap.org", "server.arcgisonline.com", "upload.wikimedia.org"];
 const SHELL = [
   "./",
   "index.html",
@@ -37,9 +40,9 @@ async function trimCache(name, max) {
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
 
-  // map data (style, fonts, sprites, vector tiles): cache-first, capped —
-  // whatever you viewed online stays viewable offline
-  if (url.hostname === "tiles.openfreemap.org") {
+  // map data (style, fonts, sprites, tiles) + waypoint photos: cache-first,
+  // capped — whatever you viewed online stays viewable offline
+  if (MAP_HOSTS.includes(url.hostname)) {
     e.respondWith(
       caches.open(TILE_CACHE).then(async cache => {
         const hit = await cache.match(e.request);
