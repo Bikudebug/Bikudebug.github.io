@@ -29,14 +29,19 @@ const STEPS = [
     desc: "1) REPLY to ITO Kanako's email (ito.kanako.d8@mail.f.thers.ac.jp): move-in 26 Sep, arrival ~14:00, bedding rental yes/no (¥1,650/mo — the room has NO pillow/comforter/sheets). The dorm REQUIRES advance contact. 2) BOOK First Cabin KIX for the night of 25 Sep. 3) Carry ¥60,000–100,000 cash (first dorm bill: Sep rent ¥25,000 unprorated + ¥15,000 restoration + Wi-Fi + utilities; Yucho card takes ~1 week). 4) Consider a Japan eSIM bought in India. 5) Search your inbox for ITO-san's follow-up emails (dorm password; orientation details).",
   },
   {
+    id: "hyd-imm", when: "Thu 24 Sep · ~20:30 IST", ts: "2026-09-24T20:30:00+05:30", warn: true,
+    title: "🛂 INDIAN IMMIGRATION — at Hyderabad airport",
+    desc: "This is the ONLY immigration on the Indian side. After check-in and security, go to the Immigration counters with your passport + Japan visa + boarding pass. Officer may ask purpose: say “PhD student at Nagoya University” and show the admission letter if asked. You get an Indian EXIT stamp. Nothing to do in Singapore.",
+  },
+  {
     id: "dep-hyd", when: "Thu 24 Sep · 23:15 IST", ts: "2026-09-24T23:15:00+05:30",
     title: "Depart Hyderabad — SQ 523, seat 43A",
     desc: "Rajiv Gandhi Intl. PNR E7T7RU · e-ticket 2481322049. Cabin bag max 7 kg (1 piece).",
   },
   {
     id: "arr-sin", when: "Fri 25 Sep · 06:40 SGT", ts: "2026-09-25T06:40:00+08:00",
-    title: "Arrive Singapore Changi — 7h 30m layover",
-    desc: "TRANSIT only (no Singapore immigration). You change planes AND terminals — departure is Terminal 2. Free rest areas + showers in transit; Jewel is landside, skip it unless you're sure.",
+    title: "Arrive Singapore Changi — 7h 30m layover (NO immigration here)",
+    desc: "TRANSIT only — you stay airside, no Singapore immigration, no visa needed. You change planes AND terminals — departure is Terminal 2. Free rest areas + showers in transit; Jewel is landside, skip it unless you're sure.",
   },
   {
     id: "dep-sin", when: "Fri 25 Sep · 14:10 SGT", ts: "2026-09-25T14:10:00+08:00",
@@ -44,9 +49,9 @@ const STEPS = [
     desc: "6h 25m to Osaka.",
   },
   {
-    id: "arr-kix", when: "Fri 25 Sep · 21:35 JST", ts: "2026-09-25T21:35:00+09:00",
-    title: "Arrive Kansai KIX, Terminal 1 — immigration",
-    desc: "Show passport + visa (COE-based). Residence card is issued at KIX — check the details on it before leaving the counter. Collect both bags.",
+    id: "arr-kix", when: "Fri 25 Sep · 21:35 JST", ts: "2026-09-25T21:35:00+09:00", warn: true,
+    title: "🛂 JAPAN IMMIGRATION — at Kansai KIX, Terminal 1",
+    desc: "On the plane, fill the disembarkation card + customs form they hand out. At the counter: passport + student visa. Photo + fingerprints are taken, and they PRINT YOUR RESIDENCE CARD on the spot — before walking away, check the name, date of birth and status “Student” on it. This card is your ID in Japan; you need it Monday at the ward office. Then baggage claim (both bags) → customs (hand the form).",
   },
   {
     id: "hotel", when: "Fri 25 Sep · night", ts: "2026-09-25T22:30:00+09:00",
