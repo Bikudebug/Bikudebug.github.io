@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f1a">
+<title>Nagoya Journey — HYD → Daiko</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="clocks">
+    <div class="clock"><span class="clock-label">IST</span><span id="clock-ist">--:--:--</span></div>
+    <div class="clock"><span class="clock-label">JST</span><span id="clock-jst">--:--:--</span></div>
+  </div>
+  <div id="countdown" class="countdown">loading…</div>
+</header>
+
+<main>
+
+<section id="map-section">
+  <div id="map"></div>
+  <div class="map-buttons">
+    <button id="btn-locate" class="map-btn" title="Show my live location">📍 Track me</button>
+    <button id="btn-follow" class="map-btn" title="Keep map centred on me" disabled>🎯 Follow</button>
+    <button id="btn-wake" class="map-btn" title="Keep screen awake">🔆 Keep awake</button>
+    <button id="btn-route" class="map-btn" title="Zoom to full route">🗺️ Route</button>
+  </div>
+  <div id="geo-status" class="geo-status"></div>
+</section>
+
+<section class="card alert-card" id="luggage-alert">
+  <h2>⚠️ LUGGAGE ALERT — read before the JR counter</h2>
+  <p>Carrying <strong>141&nbsp;cm Magnum bag</strong> + <strong>164.5&nbsp;cm HRX bag</strong>.</p>
+  <p><strong>ACTION REQUIRED:</strong> the HRX bag is over 160&nbsp;cm, so at the KIX JR Ticket Office you
+  <strong>MUST explicitly ask for a “Seat with an Oversized Baggage Area”</strong> on the Shinkansen.
+  Boarding without that reservation = <strong>1,000&nbsp;JPY penalty</strong> on the train.</p>
+  <p class="small">Also: student fare = 40&nbsp;kg check-in + 7&nbsp;kg cabin, but only if you show passport,
+  student visa and the university acceptance letter at HYD check-in.</p>
+</section>
+
+<section class="card">
+  <h2>🧭 Journey timeline</h2>
+  <p class="small">Tap a step to mark it done. Progress is saved on this phone.</p>
+  <ol id="timeline" class="timeline"></ol>
+</section>
+
+<section class="card">
+  <h2>🚕 Show this to the taxi driver</h2>
+  <p class="small">Full-screen Japanese address card for the ride from Nagoya Station.</p>
+  <button id="btn-taxi" class="big-btn">🈁 Open taxi card</button>
+</section>
+
+<section class="card" id="after-arrival">
+  <h2>🏛️ After you arrive — hard deadlines</h2>
+  <ul class="deadline-list">
+    <li><label><input type="checkbox" data-done="aa-movein"><span><strong>Fri 26 Sep, 14:00–19:00 JST</strong> — move-in window at International Residence Daiko.</span></label></li>
+    <li><label><input type="checkbox" data-done="aa-ward"><span><strong>Within 14 days of moving in</strong> — register your address at the Higashi Ward Office (区役所) and complete resident registration / national health insurance.</span></label></li>
+    <li><label><input type="checkbox" data-done="aa-bank"><span><strong>1 Oct 06:00 → 31 Oct 23:59 JST</strong> — tuition bank-account web registration (mandatory even though you applied for exemption).</span></label></li>
+    <li><label><input type="checkbox" data-done="aa-exempt"><span><strong>13 Oct → 26 Oct 12:00 noon JST</strong> — tuition-exemption system application window; paper documents <strong>must arrive by 27 Oct</strong>.</span></label></li>
+    <li><label><input type="checkbox" data-done="aa-nopay"><span><strong>Do NOT pay the admission fee</strong> while the fee-exemption application is pending — paid fees are non-refundable.</span></label></li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2>🗂️ Document vault <span class="small">(stored only on this phone)</span></h2>
+  <p class="small">Files are saved in this browser’s private storage. They are never uploaded anywhere.</p>
+  <div id="vault-slots" class="vault-grid"></div>
+</section>
+
+<section class="card">
+  <h2>🔗 Quick links</h2>
+  <div class="links-grid">
+    <a class="big-btn link-btn" href="https://www.singaporeair.com/en_UK/in/plan-travel/manage-booking/" target="_blank" rel="noopener">✈️ Singapore Airlines<br><span class="small">Manage booking — PNR <strong>E7T7RU</strong></span></a>
+    <a class="big-btn link-btn" href="https://smart-ex.jp/en/" target="_blank" rel="noopener">🚄 SmartEX<br><span class="small">Shinkansen rules &amp; times</span></a>
+    <a class="big-btn link-btn" href="https://japantravel.navitime.com/en/" target="_blank" rel="noopener">🚇 Navitime Japan<br><span class="small">Live train / subway routes</span></a>
+    <a class="big-btn link-btn" href="https://www.google.com/maps/search/?api=1&query=1-1-18+Daiko-Minami,+Higashi-ku,+Nagoya" target="_blank" rel="noopener">📌 Google Maps<br><span class="small">Dormitory pin — Daiko-Minami</span></a>
+  </div>
+</section>
+
+<footer class="small footer">
+  Nagoya Journey PWA · works offline once loaded · PNR E7T7RU · e-ticket 2481322049
+</footer>
+
+</main>
+
+<div id="taxi-card" class="taxi-overlay" hidden>
+  <div class="taxi-inner">
+    <p class="taxi-hint">この住所までお願いします</p>
+    <p class="taxi-jp">名古屋市東区大幸南１丁目１−１８</p>
+    <p class="taxi-jp2">名古屋大学 インターナショナルレジデンス大幸</p>
+    <p class="taxi-en">1-1-18 Daiko-Minami, Higashi-ku, Nagoya<br>Nagoya University International Residence Daiko</p>
+    <p class="taxi-hint">ナゴヤドームの近くです (near Nagoya Dome / Vantelin Dome)</p>
+    <button id="btn-taxi-close" class="big-btn">Close</button>
+  </div>
+</div>
+
+<script src="vendor/maplibre-gl.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

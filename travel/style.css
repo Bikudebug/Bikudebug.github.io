@@ -1,0 +1,161 @@
+:root {
+  --bg: #0b0f1a;
+  --panel: #101a30;
+  --panel2: #16233f;
+  --text: #e5edff;
+  --muted: #93a4c7;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --warn-bg: #3a1010;
+  --warn-border: #ef4444;
+  --ok: #22c55e;
+  --amber: #f59e0b;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
+
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 10px 14px calc(10px);
+  padding-top: calc(10px + env(safe-area-inset-top));
+  background: rgba(11, 15, 26, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #1e2a45;
+}
+.clocks { display: flex; gap: 14px; }
+.clock { display: flex; flex-direction: column; align-items: flex-start; }
+.clock-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+.clock span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.countdown { text-align: right; font-size: 13px; color: var(--accent2); max-width: 55%; }
+.countdown strong { display: block; font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+#map-section { position: relative; margin: 12px -12px 0; }
+#map { width: 100%; height: 46vh; min-height: 300px; background: #0a0d16; }
+.map-buttons {
+  position: absolute; left: 8px; bottom: 8px; right: 8px;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.map-btn {
+  flex: 1 1 auto;
+  background: rgba(16, 26, 48, 0.92); color: var(--text);
+  border: 1px solid #2a3a5f; border-radius: 12px;
+  padding: 12px 10px; font-size: 15px; font-weight: 600;
+  cursor: pointer;
+}
+.map-btn[disabled] { opacity: 0.45; }
+.map-btn.active { border-color: var(--accent); background: #14315f; }
+.geo-status {
+  position: absolute; top: 8px; left: 8px; right: 8px;
+  font-size: 13px; color: var(--text);
+  background: rgba(16, 26, 48, 0.85); border-radius: 10px;
+  padding: 6px 10px; display: none;
+}
+.geo-status.show { display: block; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid #1e2a45;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 14px;
+}
+.card h2 { margin: 0 0 8px; font-size: 19px; }
+.small { font-size: 13px; color: var(--muted); }
+
+.alert-card {
+  background: var(--warn-bg);
+  border: 2px solid var(--warn-border);
+}
+.alert-card h2 { color: #fecaca; }
+.alert-card strong { color: #fff; }
+
+.timeline { list-style: none; margin: 8px 0 0; padding: 0; }
+.step {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 8px;
+  border-bottom: 1px solid #1c2946;
+  cursor: pointer;
+}
+.step:last-child { border-bottom: none; }
+.step-box {
+  flex: 0 0 auto;
+  width: 28px; height: 28px; margin-top: 2px;
+  border: 2px solid var(--accent2); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: transparent;
+}
+.step.done .step-box { background: var(--ok); border-color: var(--ok); color: #04240f; }
+.step.done .step-title { text-decoration: line-through; color: var(--muted); }
+.step-when { font-size: 13px; color: var(--amber); font-weight: 700; letter-spacing: 0.2px; }
+.step-title { font-weight: 700; margin: 1px 0 2px; }
+.step-desc { font-size: 14px; color: var(--muted); }
+.step.next { background: #0f1c38; border-radius: 12px; }
+.step.warnstep .step-when { color: #f87171; }
+
+.deadline-list { list-style: none; margin: 6px 0 0; padding: 0; }
+.deadline-list li { padding: 8px 0; border-bottom: 1px solid #1c2946; }
+.deadline-list li:last-child { border-bottom: none; }
+.deadline-list label { display: flex; gap: 10px; align-items: flex-start; }
+.deadline-list input { width: 22px; height: 22px; flex: 0 0 auto; margin-top: 2px; accent-color: var(--ok); }
+.deadline-list input:checked + span { text-decoration: line-through; color: var(--muted); }
+
+.big-btn {
+  display: block; width: 100%;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid #2a3a5f; border-radius: 14px;
+  padding: 16px 14px;
+  font-size: 17px; font-weight: 700; text-align: center;
+  text-decoration: none; cursor: pointer;
+}
+.big-btn:active { background: #1d3159; }
+
+.links-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.link-btn { line-height: 1.3; }
+.link-btn .small { font-weight: 400; }
+
+.vault-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.vault-slot {
+  background: var(--panel2); border: 1px dashed #33518a; border-radius: 14px;
+  padding: 12px; text-align: center; min-height: 96px;
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+}
+.vault-slot.filled { border-style: solid; border-color: var(--ok); }
+.vault-slot.special { border-color: var(--amber); }
+.vault-name { font-weight: 700; font-size: 15px; }
+.vault-meta { font-size: 12px; color: var(--muted); word-break: break-all; }
+.vault-actions { display: flex; gap: 6px; justify-content: center; }
+.vault-actions button {
+  background: #22355e; border: none; color: var(--text);
+  border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.vault-actions button.danger { background: #4a1420; }
+
+.footer { text-align: center; margin-top: 24px; }
+
+.taxi-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: #fffef2; color: #111;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.taxi-overlay[hidden] { display: none; }
+.taxi-inner { text-align: center; max-width: 640px; }
+.taxi-hint { font-size: 18px; color: #444; margin: 8px 0; }
+.taxi-jp { font-size: clamp(30px, 8vw, 56px); font-weight: 800; margin: 12px 0; }
+.taxi-jp2 { font-size: clamp(20px, 5.5vw, 36px); font-weight: 700; margin: 8px 0; }
+.taxi-en { font-size: 16px; color: #333; margin: 14px 0; }
+.taxi-overlay .big-btn { background: #111; color: #fff; border: none; margin-top: 10px; }
+
+.maplibregl-ctrl-attrib { font-size: 10px; }
