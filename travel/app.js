@@ -113,6 +113,7 @@ const STEPS = [
 const VAULT_SLOTS = [
   { id: "passport", name: "Passport" },
   { id: "visa", name: "Visa" },
+  { id: "coe", name: "COE (Certificate of Eligibility)" },
   { id: "aadhaar", name: "Aadhaar card" },
   { id: "admission", name: "Japan Admission", special: true },
   { id: "accommodation", name: "Accommodation (dorm)" },
