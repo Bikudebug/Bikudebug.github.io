@@ -128,6 +128,13 @@ const VAULT_SLOTS = [
 /* ================= Password gate =================
    SHA-256 hash only — the password itself is not in this public file. */
 const PW_HASH = "14a254676e12e20d3295ae0e779643dda94e989a6234328f4c062b78f6dd97cb";
+/* second, weaker password for family: they can watch and zoom, change nothing */
+const VIEWER_HASH = "025aa89d712f837c8bdc83cc3701999dc0951b896130ccba19ab0c17a620fa26";
+const isViewer = () => sessionStorage.getItem("viewer") === "1";
+function enterViewerMode() {
+  document.body.classList.add("viewer");
+  document.querySelectorAll("[data-done]").forEach(cb => { cb.disabled = true; });
+}
 async function sha256hex(s) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -136,11 +143,22 @@ async function sha256hex(s) {
   const overlay = document.getElementById("lock");
   const input = document.getElementById("lock-pw");
   const err = document.getElementById("lock-err");
-  if (sessionStorage.getItem("unlocked") === "1") { overlay.hidden = true; return; }
+  if (sessionStorage.getItem("unlocked") === "1") {
+    overlay.hidden = true;
+    if (isViewer()) enterViewerMode();
+    return;
+  }
   async function tryUnlock() {
-    if ((await sha256hex(input.value)) === PW_HASH) {
+    const h = await sha256hex(input.value);
+    if (h === PW_HASH) {
       sessionStorage.setItem("unlocked", "1");
+      sessionStorage.setItem("viewer", "0");
       overlay.hidden = true;
+    } else if (h === VIEWER_HASH) {
+      sessionStorage.setItem("unlocked", "1");
+      sessionStorage.setItem("viewer", "1");
+      overlay.hidden = true;
+      enterViewerMode();
     } else {
       err.hidden = false;
       input.value = "";
@@ -194,6 +212,7 @@ function renderTimeline() {
         <div class="step-desc">${s.desc}</div>
       </div>`;
     li.addEventListener("click", () => {
+      if (isViewer()) return; /* family view: look, don't tick */
       if (!isDone(s.id) && s.confirm) {
         if (!window.confirm("Did you ask for the ‘Seat with an Oversized Baggage Area’ for the 164.5 cm HRX bag?")) return;
       }
@@ -445,8 +464,9 @@ function liveJourneyTick() {
     jEl.textContent = j.icon;
     journeyMarker.setLngLat(j.pos);
   }
-  document.getElementById("journey-now").innerHTML =
-    `${j.text}<div class="small">tap here to see the marker on the map · it moves along the track in real time</div>`;
+  document.getElementById("journey-now").innerHTML = isViewer()
+    ? `🧑 <strong>Biku is safe — don't worry!</strong><br>${j.text}<div class="small">India time ${fmtTZ(330).slice(0, 5)} IST · Japan time ${fmtTZ(540).slice(0, 5)} JST · tap here to see Biku on the map</div>`
+    : `${j.text}<div class="small">tap here to see the marker on the map · it moves along the track in real time</div>`;
 }
 document.getElementById("journey-now").addEventListener("click", () => {
   const j = journeyNow();
@@ -617,7 +637,7 @@ document.getElementById("btn-route").addEventListener("click", () =>
 );
 
 /* ---------- live geolocation ---------- */
-let watchId = null, meMarker = null, follow = false;
+let watchId = null, meMarker = null, follow = false, lastGPS = null;
 const geoStatus = document.getElementById("geo-status");
 const btnLocate = document.getElementById("btn-locate");
 const btnFollow = document.getElementById("btn-follow");
@@ -644,6 +664,7 @@ btnLocate.addEventListener("click", () => {
   watchId = navigator.geolocation.watchPosition(
     pos => {
       const { longitude, latitude, accuracy, speed } = pos.coords;
+      lastGPS = { lat: latitude, lng: longitude, at: Date.now() };
       if (!meMarker) {
         const dot = document.createElement("div");
         dot.style.cssText = "width:18px;height:18px;border-radius:50%;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 12px #3b82f6;";
@@ -896,6 +917,7 @@ document.getElementById("btn-vault-import").addEventListener("click", () => {
    The published file is AES-256 encrypted; without the password it is unreadable.
    When a new copy appears, the app offers to load it into this device's vault. */
 async function checkCloudVault() {
+  if (isViewer()) return; /* family view never loads the document vault */
   let pkg;
   try {
     const resp = await fetch("vaultsync/vault-cloud.json", { cache: "no-store" });
@@ -983,8 +1005,11 @@ function statusMessage() {
   const j = journeyNow();
   const nx = nextStep();
   let m = `LIVE UPDATE — my journey to Nagoya\n\nWhere I am now:\n${j.text}\n`;
+  if (lastGPS && Date.now() - lastGPS.at < 10 * 60000) {
+    m += `My exact GPS spot: https://maps.google.com/?q=${lastGPS.lat.toFixed(5)},${lastGPS.lng.toFixed(5)}\n`;
+  }
   if (nx) m += `\nNEXT STEP (${nx.when}):\n${nx.title}\n${nx.desc}\n`;
-  m += `\nFollow my live map here: ${APP_URL}\n(The page asks for a password — I'll tell you it myself.)`;
+  m += `\nWatch Biku live on the map here: ${APP_URL}\n(The page asks for a password — I'll tell you the viewing password myself.)`;
   return m;
 }
 /* full plan with every instruction — for email, which has room */
@@ -1052,3 +1077,42 @@ function checkReminders() {
 }
 setInterval(checkReminders, 30000);
 checkReminders();
+
+/* ---------- every-30-min travel update helper ----------
+   A phone cannot send WhatsApp/email silently in the background, so this is
+   the closest honest thing: while the journey is happening, every 30 minutes
+   the phone rings; one tap on that notification opens WhatsApp with the live
+   status (incl. the latest GPS spot) already written — just press Send. */
+const btnAuto = document.getElementById("ec-auto");
+const JOURNEY_START = SEGMENTS[0].t0, JOURNEY_END = SEGMENTS[SEGMENTS.length - 1].t1;
+function autoLabel() {
+  btnAuto.textContent = `📍 30-min updates during travel: ${localStorage.getItem("auto30-on") === "1" ? "ON" : "OFF"}`;
+}
+autoLabel();
+btnAuto.addEventListener("click", async () => {
+  if (localStorage.getItem("auto30-on") === "1") { localStorage.setItem("auto30-on", "0"); autoLabel(); return; }
+  if (!("Notification" in window)) { alert("This browser cannot show notifications."); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") { alert("Notifications are blocked — allow them for this site in the browser's site settings, then try again."); return; }
+  localStorage.setItem("auto30-on", "1");
+  autoLabel();
+  alert("✅ ON. While the journey is happening (keep the app open), every 30 minutes the phone rings — one tap on the notification opens WhatsApp with your live status already written. Also turn on 📍 Track me so the message includes your exact GPS spot.");
+});
+function autoTick() {
+  if (localStorage.getItem("auto30-on") !== "1") return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const now = Date.now();
+  if (now < JOURNEY_START || now > JOURNEY_END) return;
+  const last = +localStorage.getItem("auto30-last") || 0;
+  if (now - last < 30 * 60000) return;
+  localStorage.setItem("auto30-last", String(now));
+  try {
+    const n = new Notification("📍 30-min update — tap to send", {
+      body: "WhatsApp opens with your live location and next step already written. Just press Send.",
+      tag: "auto30", requireInteraction: true,
+    });
+    n.onclick = () => { try { window.focus(); } catch {} openWA(contactVal("ec-wa"), statusMessage()); };
+  } catch {}
+}
+setInterval(autoTick, 60000);
+autoTick();
