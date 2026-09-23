@@ -259,6 +259,10 @@ const SAT_STYLE = {
       type: "raster",
       tiles: ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
       tileSize: 256,
+      // Esri has no photos past ~z17 in many areas and returns grey
+      // "Map data not yet available" tiles — cap the source so MapLibre
+      // scales up the deepest real photo instead of requesting those
+      maxzoom: 17,
       attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
     },
   },
