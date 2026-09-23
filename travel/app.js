@@ -120,6 +120,7 @@ const VAULT_SLOTS = [
   { id: "residence-email", name: "Residence email PDF" },
   { id: "eticket", name: "Flight e-ticket" },
   { id: "niyo", name: "Niyo card details" },
+  { id: "kix-hotel", name: "Hotel booking (KIX airport, 25 Sep)" },
   { id: "extra1", name: "Extra slot 1" },
   { id: "extra2", name: "Extra slot 2" },
 ];
