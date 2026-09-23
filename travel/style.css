@@ -172,11 +172,14 @@ main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 @media (min-width: 900px) {
-  main { max-width: 1160px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; align-items: start; }
-  #map-section { grid-column: 1 / -1; margin: 12px 0 0; border-radius: 16px; overflow: hidden; }
+  /* packed newspaper columns instead of a grid: rows aren't forced to the
+     height of their tallest card, so short cards leave no empty holes */
+  main { max-width: 1160px; columns: 2; column-gap: 18px; }
+  .card { break-inside: avoid; }
+  #map-section { column-span: all; margin: 12px 0 0; border-radius: 16px; overflow: hidden; }
   #map { height: 54vh; }
   .map-buttons { left: auto; min-width: 420px; }
-  .footer { grid-column: 1 / -1; }
+  .footer { column-span: all; }
 }
 
 /* password lock screen */
