@@ -961,3 +961,93 @@ btnRefresh.addEventListener("click", async () => {
   } catch { /* offline — the reload below still opens fine from the cache */ }
   location.reload(); // already newest: plain reload (also re-checks the cloud vault)
 });
+
+/* ================= Emergency contact & one-tap updates =================
+   Details live in localStorage only — this file is public, so no personal
+   numbers or addresses are ever written into it. */
+const APP_URL = "https://bikudebug.github.io/travel/";
+const EC_FIELDS = ["ec-wa", "ec-mail", "my-wa", "my-mail"];
+EC_FIELDS.forEach(id => {
+  document.getElementById(id).value = localStorage.getItem("contact:" + id) || "";
+});
+document.getElementById("ec-save").addEventListener("click", () => {
+  EC_FIELDS.forEach(id => localStorage.setItem("contact:" + id, document.getElementById(id).value.trim()));
+  alert("✅ Saved on this phone only. The send buttons now use these details.");
+});
+const contactVal = id => document.getElementById(id).value.trim() || localStorage.getItem("contact:" + id) || "";
+
+const nextStep = () => STEPS.find(s => !isDone(s.id)) || null;
+
+function statusMessage() {
+  const j = journeyNow();
+  const nx = nextStep();
+  let m = `LIVE UPDATE — my journey to Nagoya\n\nWhere I am now:\n${j.text}\n`;
+  if (nx) m += `\nNEXT STEP (${nx.when}):\n${nx.title}\n${nx.desc}\n`;
+  m += `\nFollow my live map here: ${APP_URL}\n(The page asks for a password — I'll tell you it myself.)`;
+  return m;
+}
+/* full plan with every instruction — for email, which has room */
+function planFull() {
+  let m = "MY COMPLETE NAGOYA JOURNEY PLAN\n";
+  STEPS.forEach((s, i) => {
+    m += `\n${i + 1}) ${s.when}${isDone(s.id) ? " ✅ done" : ""}\n${s.title}\n${s.desc}\n`;
+  });
+  return m + `\nLive tracking map: ${APP_URL}`;
+}
+/* compact plan + the full next step — for WhatsApp */
+function planShort() {
+  let m = "MY NAGOYA JOURNEY — quick plan\n";
+  STEPS.forEach((s, i) => { m += `${isDone(s.id) ? "✅" : "▫️"} ${i + 1}) ${s.when} — ${s.title}\n`; });
+  const nx = nextStep();
+  if (nx) m += `\nNEXT STEP in full (${nx.when}):\n${nx.title}\n${nx.desc}\n`;
+  return m + `\nLive map: ${APP_URL}`;
+}
+function openWA(numRaw, text) {
+  const num = (numRaw || "").replace(/[^0-9]/g, "");
+  if (!num) { alert("First type the WhatsApp number (with country code) in the box above and tap Save."); return; }
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`, "_blank");
+}
+function openMail(addr, subject, body) {
+  if (!addr) { alert("First type the email address in the box above and tap Save."); return; }
+  location.href = `mailto:${addr}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+document.getElementById("ec-wa-status").addEventListener("click", () => openWA(contactVal("ec-wa"), statusMessage()));
+document.getElementById("ec-mail-status").addEventListener("click", () => openMail(contactVal("ec-mail"), "Live update — journey to Nagoya", statusMessage()));
+document.getElementById("my-wa-plan").addEventListener("click", () => openWA(contactVal("my-wa"), planShort()));
+document.getElementById("my-mail-plan").addEventListener("click", () => openMail(contactVal("my-mail"), "My complete Nagoya journey plan", planFull()));
+
+/* ---------- step reminders: real phone notifications while the app is open ---------- */
+const btnRemind = document.getElementById("ec-remind");
+function remindLabel() {
+  const on = localStorage.getItem("remind-on") === "1";
+  btnRemind.textContent = `🔔 Step reminders on this phone: ${on ? "ON" : "OFF"}`;
+}
+remindLabel();
+btnRemind.addEventListener("click", async () => {
+  if (localStorage.getItem("remind-on") === "1") { localStorage.setItem("remind-on", "0"); remindLabel(); return; }
+  if (!("Notification" in window)) { alert("This browser cannot show notifications."); return; }
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") { alert("Notifications are blocked — allow them for this site in the browser's site settings, then try again."); return; }
+  localStorage.setItem("remind-on", "1");
+  remindLabel();
+  try { new Notification("🔔 Reminders are ON", { body: "You'll be reminded 45 min before each step and again at step time, with the full instructions — while the app is open." }); } catch {}
+});
+function checkReminders() {
+  if (localStorage.getItem("remind-on") !== "1") return;
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const now = Date.now();
+  for (const s of STEPS) {
+    if (isDone(s.id)) continue;
+    const t = +new Date(s.ts);
+    const fire = (tag, title) => {
+      const k = `notified:${tag}:${s.id}`;
+      if (localStorage.getItem(k) === "1") return;
+      localStorage.setItem(k, "1");
+      try { new Notification(title, { body: `${s.when}\n${s.title}\n\n${s.desc}`, tag: k, requireInteraction: true }); } catch {}
+    };
+    if (now >= t - 45 * 60000 && now < t) fire("pre", `⏰ In ${fmtDur(t - now)} — get ready`);
+    else if (now >= t && now < t + 30 * 60000) fire("due", "🚨 It's time — next step NOW");
+  }
+}
+setInterval(checkReminders, 30000);
+checkReminders();
