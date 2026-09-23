@@ -938,3 +938,26 @@ if (navigator.maxTouchPoints > 0 && window.innerWidth >= 980 && localStorage.get
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("sw.js");
 }
+
+/* ---------- 🔄 refresh: pull the newest app version without closing it ---------- */
+const btnRefresh = document.getElementById("btn-refresh");
+btnRefresh.addEventListener("click", async () => {
+  btnRefresh.classList.add("spin");
+  btnRefresh.disabled = true;
+  try {
+    const reg = "serviceWorker" in navigator && await navigator.serviceWorker.getRegistration();
+    if (reg) {
+      await reg.update();
+      const fresh = reg.installing || reg.waiting;
+      if (fresh) {
+        // a newer version is downloading — reload the moment it takes over
+        fresh.addEventListener("statechange", () => {
+          if (fresh.state === "activated") location.reload();
+        });
+        setTimeout(() => location.reload(), 8000); // safety net if the event never fires
+        return;
+      }
+    }
+  } catch { /* offline — the reload below still opens fine from the cache */ }
+  location.reload(); // already newest: plain reload (also re-checks the cloud vault)
+});

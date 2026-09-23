@@ -38,8 +38,19 @@ main { padding: 0 12px 40px; max-width: 720px; margin: 0 auto; }
 .clock { display: flex; flex-direction: column; align-items: flex-start; }
 .clock-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
 .clock span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
-.countdown { text-align: right; font-size: 13px; color: var(--accent2); max-width: 55%; }
+.countdown { text-align: right; font-size: 13px; color: var(--accent2); max-width: 50%; }
 .countdown strong { display: block; font-size: 15px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* 🔄 update button in the top bar */
+.refresh-btn {
+  flex: 0 0 auto;
+  background: var(--panel2); color: var(--text);
+  border: 1px solid #2a3a5f; border-radius: 12px;
+  padding: 8px 10px; font-size: 17px; line-height: 1; cursor: pointer;
+}
+.refresh-btn:disabled { opacity: 0.6; }
+.refresh-btn.spin { animation: refspin 1s linear infinite; }
+@keyframes refspin { to { transform: rotate(360deg); } }
 
 #map-section { position: relative; margin: 12px -12px 0; }
 #map { width: 100%; height: 46vh; min-height: 300px; background: #0a0d16; }
