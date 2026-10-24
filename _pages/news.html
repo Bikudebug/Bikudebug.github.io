@@ -1,0 +1,39 @@
+---
+layout: archive
+title: "News"
+permalink: /news/
+author_profile: true
+redirect_from:
+  - /news.html
+---
+
+{% include base_path %}
+
+<hr class="news-rule">
+
+<section class="news-accordion" aria-label="News updates by year">
+  {% assign years = site.data.news | group_by: 'year' | sort: 'name' | reverse %}
+  {% for year in years %}
+    <details class="news-year" open>
+      <summary class="news-year-summary">
+        <span class="news-year-label">{{ year.name }}</span>
+        <span class="news-year-count">{{ year.items | size }}</span>
+      </summary>
+      <div class="news-year-list">
+        {% for item in year.items %}
+          <article class="news-entry">
+            <div class="news-head">
+              {% if item.month %}
+                <span class="news-month">{{ item.month }}</span>
+              {% endif %}
+            </div>
+            <p class="news-text">{{ item.text | markdownify | replace: '<p>', '' | replace: '</p>', '' }}</p>
+            {% if item.image %}
+              <img class="news-thumb{% if item.contain %} news-thumb--contain{% endif %}" src="{{ item.image }}" alt="{{ item.alt | default: 'News image' }}" loading="lazy">
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    </details>
+  {% endfor %}
+</section>

@@ -1,20 +1,40 @@
-# News items for the home page, most recent first.
-# `text` is markdown; keep each item to one or two sentences.
+# News items, most recent first. Grouped by `year` on /news/; the home page
+# shows the first few. `text` is markdown; `image` is optional.
 
-- date: "October 2026"
-  text: "[Throwing4](/publication/2026-10-12-throwing4) was accepted for publication in *Sports Engineering* (Springer)."
+- year: "2026"
+  month: "October"
+  text: "My paper, *\"[Throwing4: Phase-Aware Pose Modeling for Throw-Distance Prediction in Elite Athletics](/publication/2026-10-12-throwing4)\"*, was accepted for publication in Sports Engineering (Springer)."
+  image: /images/throwing4-phases.gif
+  alt: "Throwing4 accepted for publication in Sports Engineering"
 
-- date: "October 2026"
-  text: "Started my PhD at the Fujii Laboratory, Department of Intelligent Systems, Graduate School of Informatics, Nagoya University."
+- year: "2026"
+  month: "October"
+  text: "I joined the Fujii Laboratory, Department of Intelligent Systems, Graduate School of Informatics, Nagoya University, as a PhD scholar."
 
-- date: "April 2026"
-  text: "Our patent *Motion-Driven Unsupervised Temporal Segmentation System for Video Data* (Indian Patent Application No. 202621045701) was filed by IIT Gandhinagar, and has since been published."
+- year: "2026"
+  month: "June"
+  text: "Our patent, *\"Motion-Driven Unsupervised Temporal Segmentation System for Video Data\"* (Indian Patent Application No. 202621045701), was published."
 
-- date: "November 2025"
-  text: "[BoxingVI](https://arxiv.org/abs/2511.16524), a multi-modal benchmark for boxing action recognition and localization, is out on arXiv."
+- year: "2025"
+  month: "November"
+  text: "My paper, *\"[BoxingVI: A Multi-Modal Benchmark for Boxing Action Recognition and Localization](https://arxiv.org/abs/2511.16524)\"*, is out on arXiv."
+  image: /images/boxingvi-actions.gif
+  alt: "BoxingVI benchmark released on arXiv"
 
-- date: "August 2025"
-  text: "[UTAL-GNN](/publication/2025-08-01-utal-gnn) was accepted at the IEEE ICIP 2025 Workshops."
+- year: "2025"
+  month: "August"
+  text: "My paper, *\"[UTAL-GNN: Unsupervised Temporal Action Localization using Graph Neural Networks](/publication/2025-08-01-utal-gnn)\"*, was accepted at the IEEE ICIP 2025 Workshops."
+  image: /images/utal-gnn-graph.gif
+  alt: "UTAL-GNN accepted at the IEEE ICIP 2025 Workshops"
 
-- date: "May 2025"
-  text: "Two papers accepted at the IEEE International Workshop on Sport, Technology and Research (STAR 2025): [biomechanical-phase segmentation on javelin throw](/publication/2025-05-01-biomechanical-star) and [unsupervised segmentation of diving](/publication/2025-06-01-diving-graph)."
+- year: "2025"
+  month: "June"
+  text: "My paper, *\"[Graph-Based Unsupervised Temporal Segmentation of Diving Actions](/publication/2025-06-01-diving-graph)\"*, was accepted at the IEEE International Workshop on Sport, Technology and Research (STAR 2025)."
+  image: /images/diving-phases.gif
+  alt: "Diving segmentation paper accepted at IEEE STAR 2025"
+
+- year: "2025"
+  month: "May"
+  text: "My paper, *\"[Biomechanical-phase based Temporal Segmentation in Sports Videos: a Demonstration on Javelin-Throw](/publication/2025-05-01-biomechanical-star)\"*, was accepted at the IEEE International Workshop on Sport, Technology and Research (STAR 2025)."
+  image: /images/javelin-phases.gif
+  alt: "Javelin-throw segmentation paper accepted at IEEE STAR 2025"
