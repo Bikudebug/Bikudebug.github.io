@@ -47,9 +47,7 @@ layout: default
     <div class="home-stack">
       {% if page.bio_quote %}
         <section class="home-bio">
-          <div class="home-quote-mark" aria-hidden="true">&ldquo;</div>
           <div class="home-bio-text" itemprop="description">{{ page.bio_quote | markdownify }}</div>
-          <div class="home-quote-mark home-quote-mark--end" aria-hidden="true">&rdquo;</div>
         </section>
       {% endif %}
 
@@ -57,7 +55,7 @@ layout: default
         <section class="home-news">
           <h2 class="home-news-title">News</h2>
           <div class="home-news-list">
-            {% for item in site.data.news limit: 4 %}
+            {% for item in site.data.news limit: 3 %}
               <div class="home-news-item">
                 <span class="home-news-time">{{ item.month }} {{ item.year }}</span>
                 <span class="home-news-text">{{ item.text | markdownify | replace: '<p>', '' | replace: '</p>', '' }}</span>
