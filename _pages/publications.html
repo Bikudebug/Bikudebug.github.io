@@ -7,14 +7,6 @@ author_profile: false
 
 {% include base_path %}
 
-{% if site.author.googlescholar %}
-  <p class="pub-intro">
-    A full list with citation counts is on my
-    <a href="{{ site.author.googlescholar }}">Google Scholar profile</a>.
-    My name is shown in <span class="pub-me">bold</span> in each author list.
-  </p>
-{% endif %}
-
 {% assign all_pubs = site.publications | sort: 'date' | reverse %}
 {% assign under_review = all_pubs | where: 'status', 'Under Review' %}
 {% assign settled = all_pubs | where_exp: 'p', "p.status != 'Under Review'" %}
