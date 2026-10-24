@@ -7,8 +7,8 @@ redirect_from:
   - /about/
   - /about.html
 bio_quote: >
-  I am a PhD scholar at the **Fujii Laboratory**, Department of Intelligent
-  Systems, Graduate School of Informatics, **Nagoya University**. I work on
+  I am a PhD scholar at the Fujii Laboratory, Department of Intelligent
+  Systems, Graduate School of Informatics, Nagoya University. I work on
   computer vision for human motion: pose-based action recognition, temporal
   segmentation of continuous movement, and graph neural networks for activity
   analysis. One constraint runs through most of my work: use as little
