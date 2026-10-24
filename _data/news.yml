@@ -30,7 +30,7 @@
 - year: "2025"
   month: "June"
   text: "My paper, *[Graph-Based Unsupervised Temporal Segmentation of Diving Actions](/publication/2025-06-01-diving-graph)*, was accepted at the IEEE International Workshop on Sport, Technology and Research (STAR 2025)."
-  image: /images/diving-real.webp
+  image: /images/diving-arch.webp
   alt: "Diving segmentation paper accepted at IEEE STAR 2025"
 
 - year: "2025"
