@@ -1,0 +1,20 @@
+# News items for the home page, most recent first.
+# `text` is markdown; keep each item to one or two sentences.
+
+- date: "October 2026"
+  text: "[Throwing4](/publication/2026-10-12-throwing4) was accepted for publication in *Sports Engineering* (Springer)."
+
+- date: "October 2026"
+  text: "Started my PhD at the Fujii Laboratory, Department of Intelligent Systems, Graduate School of Informatics, Nagoya University."
+
+- date: "April 2026"
+  text: "Our patent *Motion-Driven Unsupervised Temporal Segmentation System for Video Data* (Indian Patent Application No. 202621045701) was filed by IIT Gandhinagar, and has since been published."
+
+- date: "November 2025"
+  text: "[BoxingVI](https://arxiv.org/abs/2511.16524), a multi-modal benchmark for boxing action recognition and localization, is out on arXiv."
+
+- date: "August 2025"
+  text: "[UTAL-GNN](/publication/2025-08-01-utal-gnn) was accepted at the IEEE ICIP 2025 Workshops."
+
+- date: "May 2025"
+  text: "Two papers accepted at the IEEE International Workshop on Sport, Technology and Research (STAR 2025): [biomechanical-phase segmentation on javelin throw](/publication/2025-05-01-biomechanical-star) and [unsupervised segmentation of diving](/publication/2025-06-01-diving-graph)."

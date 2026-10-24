@@ -1,0 +1,76 @@
+---
+layout: default
+---
+
+{% include base_path %}
+
+{%- comment -%}
+  Trestles-style home page: identity card on the left (photo, name, icon
+  links), bio-in-quotes plus a News card on the right, and the rest of the
+  page content full-width below. The bio comes from the page's `bio_quote`
+  front matter; news items come from `_data/news.yml`.
+{%- endcomment -%}
+
+{% assign author = site.author %}
+
+<div id="main" role="main">
+  <article class="home-trestles" itemscope itemtype="https://schema.org/Person">
+
+    <div class="home-entity">
+      {% if author.avatar %}
+        {% if author.avatar contains "://" %}
+          {% assign author_avatar = author.avatar %}
+        {% else %}
+          {% assign author_avatar = author.avatar | prepend: "/images/" | prepend: base_path %}
+        {% endif %}
+        <img class="home-photo" src="{{ author_avatar }}" alt="{{ author.name }}" itemprop="image">
+      {% endif %}
+
+      <h1 class="home-name" itemprop="name">{{ author.name }}</h1>
+
+      <div class="home-links">
+        {% if author.googlescholar %}
+          <a href="{{ author.googlescholar }}" class="home-link" aria-label="Google Scholar" title="Google Scholar"><i class="ai ai-google-scholar" aria-hidden="true"></i></a>
+        {% endif %}
+        {% if author.linkedin %}
+          <a href="https://www.linkedin.com/in/{{ author.linkedin }}" class="home-link" aria-label="LinkedIn" title="LinkedIn"><i class="fab fa-linkedin-in" aria-hidden="true"></i></a>
+        {% endif %}
+        {% if author.github %}
+          <a href="https://github.com/{{ author.github }}" class="home-link" aria-label="GitHub" title="GitHub"><i class="fab fa-github" aria-hidden="true"></i></a>
+        {% endif %}
+        {% if author.email %}
+          <a href="mailto:{{ author.email }}" class="home-link" aria-label="Email" title="Email"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="home-stack">
+      {% if page.bio_quote %}
+        <section class="home-bio">
+          <div class="home-quote-mark" aria-hidden="true">&ldquo;</div>
+          <div class="home-bio-text" itemprop="description">{{ page.bio_quote | markdownify }}</div>
+          <div class="home-quote-mark home-quote-mark--end" aria-hidden="true">&rdquo;</div>
+        </section>
+      {% endif %}
+
+      {% if site.data.news and site.data.news.size > 0 %}
+        <section class="home-news">
+          <h2 class="home-news-title">News</h2>
+          <div class="home-news-list">
+            {% for item in site.data.news %}
+              <div class="home-news-item">
+                <span class="home-news-time">{{ item.date }}</span>
+                <span class="home-news-text">{{ item.text | markdownify | replace: '<p>', '' | replace: '</p>', '' }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+  </article>
+
+  <div class="home-below page__content">
+    {{ content }}
+  </div>
+</div>

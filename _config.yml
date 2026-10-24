@@ -26,9 +26,9 @@ author:
   avatar           : "profile_photo.png"
   name             : "Bikash Kumar Badatya"
   pronouns         : "he/him"  
-  bio              : "M.Sc. Physics, IIT Gandhinagar. Computer vision, motion understanding, sports analytics."
-  location         : # removed
-  employer         : # removed
+  bio              : "PhD scholar, Fujii Laboratory, Nagoya University. Computer vision, motion understanding, sports analytics."
+  location         : "Nagoya, Japan"
+  employer         : "Nagoya University, Graduate School of Informatics"
   uri              : # URL
   email            : "bikash.badatya@iitgn.ac.in"
 
