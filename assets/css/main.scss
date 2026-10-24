@@ -922,3 +922,18 @@ span.edu-org {
     }
   }
 }
+
+/* ==========================================================================
+   SIDEBAR-LESS PAGES - content spans the full container, reference style
+   ========================================================================== */
+
+/* The archive layout reserves a left column for the author sidebar; on pages
+   that turn the sidebar off, let the content take the whole row. */
+#main:not(:has(> .sidebar)) .archive {
+  float: none;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
